@@ -1,11 +1,11 @@
 # Data_Science_portfolio_dev: A private repository to update and improve my data science portfolio
 
 # Data Science portfolio
-A collection of personal data sience and computational biology and projects.
+A collection of personal data science and computational biology and projects.
 
 ## About me
 
-I am an Immunologist with experience in molecular biology and data analysis with R and Python. As a researcher, I have developed strong skills in statistical analysis and communication. My research included analysis of complex genomic datasets of immune cell receptors and led to 10 articles in peer-reviewed journals. I have a passion for the use of machine learning in the drug discovery process.
+I am a Senior Scientist with experience in immunology, molecular biology and data analysis with R and Python. As a researcher, I have developed strong skills in statistical analysis and communication. My research included analysis of complex genomic datasets of immune cell receptors and led to 10 articles in peer-reviewed journals. I have a passion for the use of machine learning in the drug discovery process.
 
 ## Contact Information
 William Guesdon, London UK  
