@@ -1,4 +1,4 @@
-# Determine_Risks_Factors_Associated_with_Strokes
+# Determine Risks Factors Associated with Strokes
 
 ## Introduction
 
