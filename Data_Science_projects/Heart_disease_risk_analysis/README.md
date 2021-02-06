@@ -10,6 +10,6 @@ The analysis was performed using R.
 The dataset was cleaned according to the information gathered on the  Kaggle discussion board. 
 I used a decision tree and random Forest algorithms to identify patients with heart disease.
 
-## Conclusions
+## Results
 
 The Random Forest algorithm accurately identify 82% of patients with heart disease.
