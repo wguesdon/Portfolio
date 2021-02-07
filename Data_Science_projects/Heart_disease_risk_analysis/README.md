@@ -12,4 +12,4 @@ I used a decision tree and random Forest algorithms to identify patients with he
 
 ## Results
 
-The Random Forest algorithm accurately identify 82% of patients with heart disease.
+The Random Forest algorithm accurately identify 88% of patients with heart disease.
