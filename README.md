@@ -15,24 +15,24 @@ William Guesdon, Manchester UK
 ***
 ## Data Science projects
 
-### [Predicting Heart Disease Risk with Random Forest]()
+### [Predicting Heart Disease Risk with Random Forest](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Heart_disease_risk_analysis)
 Heart disease is the leading cause of death in the United States ([1](https://www.cdc.gov/heartdisease/facts.htm)). To address this significant health issue, the Center for Disease Control (CDC) has a division dedicated to heart disease and stroke prevention ([2](https://www.cdc.gov/dhdsp/programs/spha/index.htm)). The CDC also recently started to use machine learning for prevention and diagnoses, which should be useful in identifying the population at risk ([3](https://www.electronicproducts.com/Programming/Software/The_CDC_uses_machine_learning_and_social_media_to_forecast_flu_outbreaks.aspx)).
 Assisting diagnoses is an exciting and promising application of machine learning ([4](https://www.nature.com/articles/s41467-019-14225-8), [5](https://www.nature.com/articles/s41598-019-56889-8)), but the use of black box models is a potential issue ([6](https://www.thelancet.com/journals/lanres/article/PIIS2213-2600(18)304259/fulltext)). In this analysis, I used a decision tree open model to identify subjects with heart disease. The model achieved 80% accuracy, highlighting the potential of machine leering in assisting and accelerating the diagnosis of heart disease.
 
-### [Determine Risks Factors Associated with Strokes]()
+### [Determine Risks Factors Associated with Strokes](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Determine_Risks_Factors_Associated_with_Strokes)
 The goal of this assignment is to use statistical learning to identify the combination of the features that are more likely to be associated with stroke. For this analysis, I first performed an exploratory data analysis and feature engineering. As often seen in health-related datasets, the proportion of patients with stroke is low, resulting in a severely unbalanced dataset. To compensate for the unbalance, I used the ROSE package to artificially over sample the number of strokes observations.  
 I then used a dimension reduction technique adapted to mixed datasets of continuous and categorical variables with the FAMD package. This visualization allowed me to identify the features most likely associated with the risk of developing a stroke.
 Using these selected variables, I built a logistic regression model to evaluate the contribution of each feature to the risk of developing a stroke. The logistic regression model identified the Age, Average Glucose Level, Smoking, Hypertension, and Heart Diseases features as the most likely risk factors of developing a stroke. Age was the principal risk factor in this study.
 
-### [Sentiment analysis and incident prediction (Project Hack 5)]()
+### [Sentiment analysis and incident prediction (Project Hack 5)](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Sentiment_Analysis_from_A14_Observation_Report)
 The users of the A14 road can report incidents using an application. The goal of this challenge proposed by the organizers of the Project: Hack5 hackathon is to perform sentiment analysis to obtain new insights from the user's comments and improve the user experiences on the application.
 The sentiment analysis was performed using the TextBlog library in python. Based on the sentiment analysis, an incident prediction tool was built using a Random Forest algorithm. The model can predict the type of incident with an accuracy of 83% and could be used to add a questionnaire auto-completion functionality in the application. 
 
-### [Food Safety Agency Hackathon: young population survey analysis]()  
+### [Food Safety Agency Hackathon: young population survey analysis](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/FSA_Hackathon)  
 The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ wider interest in food. The FSA is responsible for making sure food is safe and what it says it is.  
 On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.  
 
-### [NYC Airbnb: house price prediction]()
+### [NYC Airbnb: house price prediction](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/NYC_Airbnb)
 For this project, I explored a dataset of Airbnb properties in NYC. I used Python and the Seaborn library to visualize the data. The examination of the dataset highlights the large variability of the price distribution and the expected impact of the neighborhood and room type on price. To model the property price based on the independent variables, I used the scikit-learn library to implement multiple linear regression and random forest regressors. Given the limited number of independent variables on the dataset, the model accuracy was limited, especially for the higher-priced properties. A more elaborated model could be built using neural network and natural language processing analysis of the properties reviews to improve the model efficiency.
 
 ### [Melbourne Housing Market: Multiple Linear Regression]()
