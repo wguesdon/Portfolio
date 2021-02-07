@@ -30,20 +30,20 @@ The sentiment analysis was performed using the TextBlog library in python. Based
 
 ### [Food Safety Agency Hackathon: young population survey analysis](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/FSA_Hackathon)  
 The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ wider interest in food. The FSA is responsible for making sure food is safe and what it says it is.  
-On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.  
+On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon
+
+-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.  
 
 ### [NYC Airbnb: house price prediction](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/NYC_Airbnb)
 For this project, I explored a dataset of Airbnb properties in NYC. I used Python and the Seaborn library to visualize the data. The examination of the dataset highlights the large variability of the price distribution and the expected impact of the neighborhood and room type on price. To model the property price based on the independent variables, I used the scikit-learn library to implement multiple linear regression and random forest regressors. Given the limited number of independent variables on the dataset, the model accuracy was limited, especially for the higher-priced properties. A more elaborated model could be built using neural network and natural language processing analysis of the properties reviews to improve the model efficiency.
 
-### [Melbourne Housing Market: Multiple Linear Regression]()
+### [Melbourne Housing Market: Multiple Linear Regression](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Melbourne_Housing_Market)
 For this project, as for the NYC Airbnb analysis, I used Python and the scikit-learn library to predict the price of houses based on the independent variables. Because there were more variables in this dataset and because several factors were linearly correlated to the price, a multiple linear regression model performed well.
 
 ***
 ## Computational Biology projects
-### [B cells repertoire analysis]()
+### [B cells repertoire analysis](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Computational_Biology_projects/B_cell_repertoire_analysis)
 Systemic lupus erythematosus (SLE) is an autoimmune disease in which the B lymphocytes produce pathogenic auto-antibodies targeting healthy tissues. The exact causes of the diseases are unknown but involves a combination of genetic and environmental factors. In this project I used the AntibodyMap database to extract the heavy chains of healthy subject and SLE Patients. My interest was particularly to compare the IgM heavy chains repertoire between healthy control and SLE patients. I used the Immcantation pipeline developed by Steven Kleinstein’s team and my owns custom scripts to compare the B cell repertoire of SLE patient to healthy controls.
 
-### [Ubuntu Server]()
+### [Ubuntu Server](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Computational_Biology_projects/Ubuntu_Server)
 The steps used to create the Ubuntu 18.04 server used for B cells Receptor clonal analysis.
-
-
