@@ -1,0 +1,572 @@
+---
+title: "Tipton_2015_analysis_part1_v01-01"
+author: "William Guesdon"
+output: github_document
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r warning=FALSE, message=FALSE}
+################
+# Load libraries
+################
+
+library(tidyverse)
+library(alakazam)
+library(shazam)
+library(cowplot)
+library(rstatix)
+library(cowplot)
+library(ggpubr)
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE, include=FALSE}
+#####################
+#Set up ggplot theme
+####################
+
+tmp_theme <- theme_classic()
+
+##########################################
+#Set up color blind friendly color palette
+##########################################
+
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+# The palette with black:
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+# To use for fills, add
+  # scale_fill_manual(values=cbPalette)
+# To use for line and point colors, add
+  # scale_colour_manual(values=cbPalette)
+```
+
+# Abstract
+
+# Introduction
+
+    * Obtained data set from the Antibody Database
+    * Firt goal comapring physicco chemical properties of Lupus Ig compared to Health Control sequences
+
+
+# Docker Changeo Analysis
+
+1. Connect to Immcantation Docker in the Mac terminal
+2. Parse IMGT output
+3. Remove non-functional sequences
+4. Add Isotype and Cell Subset column
+5. Run clonal analysis
+
+```{bash eval=FALSE}
+# Run Docker in the Mac terminal
+
+cd /Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/AntibodyMap
+
+#####################################
+# 1 Connect to docker in the terminal
+#####################################
+
+docker run -it -v /Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/AntibodyMap:/data:z kleinstein/immcantation:2.7.0 bash
+cd data/
+ls
+cd HC
+ls
+>
+Tipton_2015_FLU_Bulk_FLU_subject_1_iglblastn_Bulk.fasta
+Tipton_2015_FLU_Bulk_FLU_subject_1_iglblastn_Bulk.fasta.gz
+Tipton_2015_FLU_Bulk_FLU_subject_1_iglblastn_Bulk.json.gz
+Tipton_2015_FLU_Bulk_FLU_subject_1_iglblastn_Bulk.txz
+Tipton_2015_FLU_Bulk_FLU_subject_2_iglblastn_Bulk.fasta
+Tipton_2015_FLU_Bulk_FLU_subject_2_iglblastn_Bulk.fasta.gz
+Tipton_2015_FLU_Bulk_FLU_subject_2_iglblastn_Bulk.json.gz
+Tipton_2015_FLU_Bulk_FLU_subject_2_iglblastn_Bulk.txz
+Tipton_2015_FLU_Bulk_FLU_subject_3_iglblastn_Bulk.fasta
+Tipton_2015_FLU_Bulk_FLU_subject_3_iglblastn_Bulk.fasta.gz
+Tipton_2015_FLU_Bulk_FLU_subject_3_iglblastn_Bulk.json.gz
+Tipton_2015_FLU_Bulk_FLU_subject_3_iglblastn_Bulk.txz
+Tipton_2015_FLU_Bulk_FLU_subject_4_iglblastn_Bulk.fasta
+Tipton_2015_FLU_Bulk_FLU_subject_4_iglblastn_Bulk.fasta.gz
+Tipton_2015_FLU_Bulk_FLU_subject_4_iglblastn_Bulk.json.gz
+Tipton_2015_FLU_Bulk_FLU_subject_4_iglblastn_Bulk.txz
+Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.fasta
+Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.fasta.gz
+Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.json.gz
+Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.txz
+Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.fasta
+Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.fasta.gz
+Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.json.gz
+Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.txz
+Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.fasta
+Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.fasta.gz
+Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.json.gz
+Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.txz
+Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.fasta
+Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.fasta.gz
+Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.json.gz
+Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.txz
+
+cd ..
+cd cd SLE/
+ls
+>
+Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.txz
+Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.txz
+Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.txz
+Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.txz
+Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.txz
+Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.txz
+Tipton_2015_SLE_Bulk_SLE_subject_7_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_7_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_7_iglblastn_Bulk_fasta.txz
+Tipton_2015_SLE_Bulk_SLE_subject_7_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_8_iglblastn_Bulk.fasta
+Tipton_2015_SLE_Bulk_SLE_subject_8_iglblastn_Bulk.fasta.gz
+Tipton_2015_SLE_Bulk_SLE_subject_8_iglblastn_Bulk.json.gz
+Tipton_2015_SLE_Bulk_SLE_subject_8_iglblastn_Bulk.txz
+
+######################
+# 2 Parse IMGT output
+######################
+cd data/HC/
+MakeDb.py imgt -i Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.txz -s Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:43:29 |Done                | 0.0 min
+
+PROGRESS> 18:43:33 |####################| 100% (18,576) 0.1 min
+
+OUTPUT> Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk_db-pass.tab
+  PASS> 1039
+  FAIL> 17537
+   END> MakeDb
+
+MakeDb.py imgt -i Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.txz -s Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:44:17 |Done                | 0.0 min
+
+PROGRESS> 18:44:20 |####################| 100% (10,196) 0.0 min
+
+OUTPUT> Tipton_2015_TET_Bulk_TET_subject_2_iglblastn_Bulk_db-pass.tab
+  PASS> 668
+  FAIL> 9528
+   END> MakeDb
+
+MakeDb.py imgt -i Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.txz -s Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:44:59 |Done                | 0.0 min
+
+PROGRESS> 18:45:00 |####################| 100% (3,532) 0.0 min
+
+OUTPUT> Tipton_2015_TET_Bulk_TET_subject_3_iglblastn_Bulk_db-pass.tab
+  PASS> 1585
+  FAIL> 1947
+   END> MakeDb
+
+MakeDb.py imgt -i Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.txz -s Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:45:53 |Done                | 0.0 min
+
+PROGRESS> 18:45:59 |####################| 100% (24,445) 0.1 min
+
+OUTPUT> Tipton_2015_TET_Bulk_TET_subject_4_iglblastn_Bulk_db-pass.tab
+  PASS> 1810
+  FAIL> 22635
+   END> MakeDb
+
+cd ..
+cd  cd SLE/
+
+MakeDb.py imgt -i Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.txz -s Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.fasta --regions --scores
+>
+      START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:48:01 |Done                | 0.0 min
+
+PROGRESS> 18:48:06 |####################| 100% (21,893) 0.1 min
+
+OUTPUT> Tipton_2015_SLE_Bulk_SLE_subject_1_iglblastn_Bulk_db-pass.tab
+  PASS> 912
+  FAIL> 20981
+   END> MakeDb
+
+MakeDb.py imgt -i Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.txz -s Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:50:56 |Done                | 0.0 min
+
+PROGRESS> 18:51:00 |####################| 100% (15,164) 0.1 min
+
+OUTPUT> Tipton_2015_SLE_Bulk_SLE_subject_2_iglblastn_Bulk_db-pass.tab
+  PASS> 1012
+  FAIL> 14152
+   END> MakeDb
+   
+MakeDb.py imgt -i Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.txz -s Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.fasta --regions --scores
+>  
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:51:39 |Done                | 0.2 min
+
+PROGRESS> 18:52:19 |####################| 100% (172,694) 0.7 min
+
+OUTPUT> Tipton_2015_SLE_Bulk_SLE_subject_3_iglblastn_Bulk_db-pass.tab
+  PASS> 8162
+  FAIL> 164532
+   END> MakeDb
+
+MakeDb.py imgt -i Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.txz -s Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.fasta --regions --scores
+>
+      START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:53:04 |Done                | 0.0 min
+
+PROGRESS> 18:53:14 |####################| 100% (39,846) 0.2 min
+
+OUTPUT> Tipton_2015_SLE_Bulk_SLE_subject_4_iglblastn_Bulk_db-pass.tab
+  PASS> 959
+  FAIL> 38887
+   END> MakeDb
+
+MakeDb.py imgt -i Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.txz -s Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:53:42 |Done                | 0.0 min
+
+PROGRESS> 18:53:48 |####################| 100% (25,157) 0.1 min
+
+OUTPUT> Tipton_2015_SLE_Bulk_SLE_subject_5_iglblastn_Bulk_db-pass.tab
+  PASS> 1919
+  FAIL> 23238
+   END> MakeDb
+
+
+MakeDb.py imgt -i Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.txz -s Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.fasta --regions --scores
+>
+       START> MakeDb
+     ALIGNER> IMGT
+ALIGNER_FILE> Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.txz
+    SEQ_FILE> Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk.fasta
+     ASIS_ID> False
+     PARTIAL> False
+      SCORES> True
+     REGIONS> True
+    JUNCTION> False
+
+PROGRESS> 18:54:24 |Done                | 0.0 min
+
+PROGRESS> 18:54:26 |####################| 100% (8,558) 0.0 min
+
+OUTPUT> Tipton_2015_SLE_Bulk_SLE_subject_6_iglblastn_Bulk_db-pass.tab
+  PASS> 2997
+  FAIL> 5561
+   END> MakeDb
+```
+
+**A majority of the sequecnes failed. This could be caused by a difference in the pipeline check the in the paper method what sequencing methd was used.**
+
+Library preparation:
+NGS data is deposited at the NCBI sequence read archive (SRA) study accession, SRP057017. Total cellular RNA was isolated from the number of cells outlined in Table 1 using the RNeasy Micro kit by following the manufacturer's protocol (Qiagen). Approximately 2 ng of RNA was subjected to reverse transcription using the iScript cDNA synthesis kit (BioRad). Aliquots of the resulting single-stranded cDNA products were mixed with 50 nM of VH1-VH7 FR1 specific primers and 250 nM Cα, Cμ, and Cγ specific primers preceded by the respective Illumina nextera sequencing tag (oligonucleotide sequences listed below) in a 25 μl PCR reaction (using 4 αl template cDNA) using Invitrogen's High Fidelity Platinum PCR Supermix (Invitrogen). 
+
+# Lod each file, edit table and fuse
+* Load the files
+* Add the variables
+    * Donor
+    * Health Status HC or SLE
+    * Isotype
+* Fuse all the table in one master table
+* Run the rest of Immcantation pipeline on the master table
+
+```{r}
+HC1  <- readChangeoDb("/Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/AntibodyMap/HC/Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk_db-pass.tab")
+```
+
+```{r}
+directory <- "/Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/AntibodyMap/HC/"
+files <- dir(directory, pattern = "*.tab")
+```
+
+```{r}
+desired_length <- 4
+HC_list <- vector(mode = "list", length = desired_length)
+```
+
+
+```{r}
+# #https://stackoverflow.com/questions/33177118/append-a-data-frame-to-a-list
+# #https://stackoverflow.com/questions/17499013/how-do-i-make-a-list-of-data-frames
+# counter <- 1
+# for (i in files){ 
+#     file_path <- paste0(directory,i)
+#     #print(file_path) 
+#     HC_list[counter] <- list(readChangeoDb(file_path))
+#     counter <- counter + 1
+# }
+```
+
+```{r}
+#https://stackoverflow.com/questions/33177118/append-a-data-frame-to-a-list
+#https://stackoverflow.com/questions/17499013/how-do-i-make-a-list-of-data-frames
+counter <- 1
+for (i in files){ 
+    file_path <- paste0(directory,i)
+    #print(file_path) 
+    HC_list[counter] <- list(readChangeoDb(file_path))
+    HC_list[[counter]] <-  HC_list[[counter]] %>%
+        dplyr::mutate(
+            Donor = counter,
+            Status = "HC"
+        )
+    counter <- counter + 1
+}
+```
+
+```{r}
+#glimpse(empty_list)
+```
+
+```{r}
+#db <- empty_list[[1]]
+#View(db)
+```
+
+```{r}
+# #dir(directory, pattern = "*.tab")
+# file_path <- paste0(directory,"Tipton_2015_TET_Bulk_TET_subject_1_iglblastn_Bulk_db-pass.tab")
+# db <- readChangeoDb(file_path)
+# glimpse(db)
+```
+  
+```{r}
+HC <- HC_list[[1]]
+for (i in c(2:length(HC_list))){
+    #print(i)
+    HC <- bind_rows(HC, HC_list[[i]])
+}
+```
+ 
+```{r}
+#glimpse(HC_list[[4]])
+```
+ 
+```{r}
+#glimpse(HC)
+directory <- "/Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/Immcantation/"
+saveRDS(HC, "Output/R_object/all_HC.RDS")
+writeChangeoDb(HC, paste0(directory,"all_HC.tab"))
+```
+  
+```{r}
+directory <- "/Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/AntibodyMap/SLE/"
+files <- dir(directory, pattern = "*.tab")
+#files
+```
+  
+```{r}
+desired_length <- length(files)
+SLE_list <- vector(mode = "list", length = desired_length)
+```
+
+```{r}
+counter <- 1
+for (i in files){ 
+    file_path <- paste0(directory,i)
+    #print(file_path) 
+    SLE_list[counter] <- list(readChangeoDb(file_path))
+    SLE_list[[counter]] <-  SLE_list[[counter]] %>%
+        dplyr::mutate(
+            Donor = counter,
+            Status = "SLE"
+        )
+    counter <- counter + 1
+}
+```
+  
+```{r}
+SLE <- SLE_list[[1]]
+for (i in c(2:length(SLE_list))){
+    #print(i)
+    SLE <- bind_rows(SLE, SLE_list[[i]])
+}
+```
+  
+```{r}
+#glimpse(SLE)
+directory <- "/Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/Immcantation/"
+saveRDS(SLE, "Output/R_object/all_SLE.RDS")
+writeChangeoDb(SLE, paste0(directory,"all_SLE.tab"))
+```
+
+```{r}
+SLE <- SLE %>% filter(FUNCTIONAL == "TRUE")
+HC <- HC %>% filter(FUNCTIONAL == "TRUE")
+
+all_samples <- bind_rows(HC, SLE)
+directory <- "/Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/Immcantation/"
+saveRDS(all_samples, "Output/R_object/all_samples_pre_threshold.RDS")
+writeChangeoDb(all_samples, paste0(directory,"all_samples.tab"))
+```
+
+# Run the clonal analysis on combined dataset
+```{bash eval=FALSE}
+#######################
+# 4 Determine threshold
+#######################
+
+docker run -it -v /Users/william/Documents/GitHub/GitHub_Data/Tipton_2015_SLE_vs_HC/Immcantation:/data:z kleinstein/immcantation:2.7.0 bash
+cd data/
+ls
+>
+all_HC.tab  all_samples.tab  all_SLE.tab
+
+shazam-threshold -d all_HC.tab
+>
+THRESHOLD_AVG> 0.0674195
+
+shazam-threshold -d all_SLE.tab
+>
+THRESHOLD_AVG> 0.0674195
+
+shazam-threshold -d all_samples.tab 
+>
+THRESHOLD_AVG> 0.0592632
+```
+
+# Why is the threshold EXACTLY the same for SLE and HC?
+
+Check that the 2 df are different
+```{r}
+glimpse(HC)
+#View(HC)
+```
+
+```{r}
+glimpse(SLE)
+#View(SLE)
+```
+
+```{r}
+glimpse(all_samples)
+#View(all_samples)
+```
+
+Did not used parse select to remove non functional sequence but instead directly use dplyr.
+After verification it appears that the dataset are clearly differents
+
+```{bash eval=FALSE}
+####################
+# 5 Clonal threshold
+####################
+
+changeo-clone -d all_samples.tab -x 0.0592632
+
+>
+START
+   1: ParseDb select           14:01 01/22/20
+   2: DefineClones             14:01 01/22/20
+   3: CreateGermlines          14:05 01/22/20
+   4: ParseLog                 14:06 01/22/20
+   5: Compressing files        14:06 01/22/20
+DONE
+```
