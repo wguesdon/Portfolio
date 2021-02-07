@@ -1,6 +1,5 @@
 Tipton 2015 Analysis part2
 ================
-William Guesdon
 Compiled: February 29, 2020
 
 ``` r
