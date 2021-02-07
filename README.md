@@ -49,9 +49,7 @@ The significant highlights from the analysis are:
 
 ### [Food Safety Agency Hackathon: young population survey analysis](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/FSA_Hackathon)  
 The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ wider interest in food. The FSA is responsible for making sure food is safe and what it says it is.  
-On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon
-
--tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.  
+On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.  
 
 ### [Visualizing Inequalities in Life Expectancy](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Visualizing_Inequalities_in_Life_Expectancy)
 
