@@ -18,4 +18,4 @@ Using dimension reduction and supervised machine learning, I was able to identif
 * Hypertension
 * Heart Disease
 
-These features could be used to build a machine learning model of stroke risk using the logistic regression or random forest. Although given the limited number of initial observations, such a model is more at risk to overfit even after correction for sample unbalanced.
+These features could be used to build a machine learning model of stroke risk using the logistic regression or random forest. Although given the limited number of initial observations, such a model is more at risk to overfit even after correction for sample unbalance.

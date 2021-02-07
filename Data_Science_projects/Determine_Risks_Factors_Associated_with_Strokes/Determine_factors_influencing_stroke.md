@@ -2159,25 +2159,25 @@ summary(model)
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -2.5509  -0.7771   0.2858   0.7807   2.5984  
+    ## -2.5522  -0.7796   0.2855   0.7838   2.5845  
     ## 
     ## Coefficients:
     ##                     Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)       -3.2937349  0.1113343 -29.584   <2e-16 ***
-    ## age                0.0741193  0.0007249 102.242   <2e-16 ***
-    ## gender             0.0165919  0.0210220   0.789     0.43    
-    ## avg_glucose_level  0.0039204  0.0001885  20.800   <2e-16 ***
-    ## ever_smoked        0.2676622  0.0207569  12.895   <2e-16 ***
-    ## hypertension      -0.4423737  0.0257334 -17.191   <2e-16 ***
-    ## heart_disease     -0.6420870  0.0328269 -19.560   <2e-16 ***
+    ## (Intercept)       -3.2609496  0.1116775 -29.200   <2e-16 ***
+    ## age                0.0741450  0.0007249 102.287   <2e-16 ***
+    ## gender             0.0449654  0.0209860   2.143   0.0321 *  
+    ## avg_glucose_level  0.0037630  0.0001881  20.007   <2e-16 ***
+    ## ever_smoked        0.2484122  0.0207514  11.971   <2e-16 ***
+    ## hypertension      -0.4322933  0.0257823 -16.767   <2e-16 ***
+    ## heart_disease     -0.6636566  0.0328507 -20.202   <2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## (Dispersion parameter for binomial family taken to be 1)
     ## 
     ##     Null deviance: 81708  on 58939  degrees of freedom
-    ## Residual deviance: 59038  on 58933  degrees of freedom
-    ## AIC: 59052
+    ## Residual deviance: 59122  on 58933  degrees of freedom
+    ## AIC: 59136
     ## 
     ## Number of Fisher Scoring iterations: 4
 
@@ -2195,7 +2195,7 @@ ll.proposed <- model$deviance/-2
 glue("McFadden's Pseudo R^2: {(ll.null - ll.proposed) / ll.null}")
 ```
 
-    ## McFadden's Pseudo R^2: 0.277450368166833
+    ## McFadden's Pseudo R^2: 0.276429977132079
 
 ``` r
 ## The p-value for the R^2
@@ -2309,10 +2309,10 @@ stroke:
   - Hypertension
   - Heart Disease
 
-This features could be used to built a machine learning model of stroke
+These features could be used to build a machine learning model of stroke
 risk using the logistic regression or random forest. Although given the
-limited number of initial observations such model is more at risk to
-over fit even after correction for sample unbalanced.
+limited number of initial observations, such a model is more at risk to
+overfit even after correction for sample unbalance.
 
 # References
 
