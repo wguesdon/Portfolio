@@ -21,8 +21,8 @@ Compiled: February 14, 2020
 -   [III Conclusions](#iii-conclusions)
 -   [References](#references)
 
-The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ wider interest in food. The FSA is responsible for making sure food is safe and what it says it is.
-On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.
+The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ broader interest in food. The FSA is responsible for making sure food is safe and what it says it is.
+On Sat, November 23, 2019, FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyze food survey questionnaires.
 
 I Dataset
 =========
@@ -114,8 +114,8 @@ The goal of this survey is to gain more insigth into the young population in par
 III Conclusions
 ===============
 
-1.  Surverys are best designed with the hypothesis in mind. The young population survey didn't have general health and wellbeing assesement preventing clear exploration of the hypothesis
-2.  No clear effect of food disorder on general gealth and wellbeing in the young population
+1.  The young population survey didn't have general health and wellbeing assessment preventing clear exploration of the hypothesis.
+2.  No apparent effect of food disorder on general health and wellbeing in the young population.
 
 References
 ==========
