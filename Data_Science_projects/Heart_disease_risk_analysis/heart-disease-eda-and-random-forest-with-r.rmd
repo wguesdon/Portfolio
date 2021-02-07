@@ -1,8 +1,7 @@
 ---
-title: "Heart Disease: EDA and Random forest with R"
-version: "v04-07"
-author: "William Guesdon"
-date: "2019/10/03"
+title: "Heart Disease: EDA and Random forest with R"  
+author: "William Guesdon"  
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'  
 output: github_document
 ---
 
@@ -72,7 +71,7 @@ thal: Thalium stress test result 3 = normal; 6 = fixed defect; 7 = reversable de
 target: Heart disease status 1 or 0 (0 = heart disease 1 = asymptomatic) 
 
 ```{r message = FALSE}
-df <- read_csv("heart.csv") # To read file on Kaggle
+df <- read_csv("./Data/heart.csv") # To read file on Kaggle
 ```
 
 ## II Tidy dataset
@@ -784,8 +783,6 @@ For prediction the following variables seems the most usefull
 
 ### A Use select columns for classification
 ```{r}
-# glimpse(df)
-
 df_select <- df %>%
   dplyr::select( #because of conflict between MASS and dplyr select need to use dplyr::select
     target,
@@ -805,7 +802,7 @@ df_select$target <- factor(df_select$target) # Define target as a factor. rpart 
 accuracy <- 0
 
 # Build a simple classification desicion tree with rpart. Run the model until the accuracy reach the selected minimum.
-while(accuracy <= 0.88) {
+while(accuracy <= 0.85) {
   split_values <- sample.split(df_select$target, SplitRatio = 0.65)
   train_set <- subset(df_select, split_values == T)
   test_set <- subset(df_select, split_values == F)
@@ -940,40 +937,39 @@ varImpPlot(model2)
 ```
 
 ## References
-Data transformation  
-https://archive.ics.uci.edu/ml/datasets/Heart+Disease  
-https://lucdemortier.github.io/projects/3_mcnulty  
-https://www.kaggle.com/ronitf/heart-disease-uci/discussion/105877  
+### Data transformation  
+* https://archive.ics.uci.edu/ml/datasets/Heart+Disease  
+* https://lucdemortier.github.io/projects/3_mcnulty  
+* https://www.kaggle.com/ronitf/heart-disease-uci/discussion/105877  
 
-Kaggles notebooks:  
-R notebooks:  
-https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r  
-https://www.kaggle.com/joemenifee/heart-disease-uci-data-exploratory  
+### Kaggles notebooks:  
+* R notebooks:  
+* https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r  
+* https://www.kaggle.com/joemenifee/heart-disease-uci-data-exploratory  
 
-Data Processing  
-http://www.cookbook-r.com/
-https://bookdown.org/rdpeng/exdata/managing-data-frames-with-the-dplyr-package.html#data-frames 
-https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html  
-https://towardsdatascience.com/simple-fast-exploratory-data-analysis-in-r-with-dataexplorer-package-e055348d9619  
-http://www.sthda.com/english/articles/24-ggpubr-publication-ready-plots/81-ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page/  
-https://www.r-graph-gallery.com/267-reorder-a-variable-in-ggplot2  
-for categorical variable  
-https://www.analyticsvidhya.com/blog/2015/11/easy-methods-deal-categorical-variables-predictive-modeling/  
+### Data Processing  
+* http://www.cookbook-r.com/
+* https://bookdown.org/rdpeng/exdata/managing-data-frames-with-the-dplyr-package.html#data-frames 
+* https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html  
+* https://towardsdatascience.com/simple-fast-exploratory-data-analysis-in-r-with-dataexplorer-package-e055348d9619  
+* http://www.sthda.com/english/articles/24-ggpubr-publication-ready-plots/81-ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page/  
+* https://www.r-graph-gallery.com/267-reorder-a-variable-in-ggplot2  
+* for categorical variable  
+* https://www.analyticsvidhya.com/blog/2015/11/easy-methods-deal-categorical-variables-predictive-modeling/  
 for correlations  
-http://www.sthda.com/english/wiki/ggally-r-package-extension-to-ggplot2-for-correlation-matrix-and-survival-plots-r-software-and-data-visualization  
+* http://www.sthda.com/english/wiki/ggally-r-package-extension-to-ggplot2-for-correlation-matrix-and-survival-plots-r-software-and-data-visualization  
 
-for Machine Learning  
-https://www.kaggle.com/naik170106027/prediction-of-heart-diseases  
-https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r  
-https://www.kaggle.com/anirbanshaw24/heart-disease-prediction-and-indicators  
-http://topepo.github.io/caret/index.html  
-https://www.youtube.com/watch?v=SeyghJ5cdm4&feature=youtu.be  
-https://www.rdocumentation.org/packages/rpart/versions/4.1-15/topics/rpart  
-https://stackoverflow.com/questions/33767804/invalid-prediction-for-rpart-object-error  
-https://machinelearningmastery.com/overfitting-and-underfitting-with-machine-learning-algorithms/  
-https://www.gormanalysis.com/blog/decision-trees-in-r-using-rpart/  
-https://www.kaggle.com/wguesdon/tuning-random-forest-parameters/edit  
+### for Machine Learning  
+* https://www.kaggle.com/naik170106027/prediction-of-heart-diseases  
+* https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r  
+* https://www.kaggle.com/anirbanshaw24/heart-disease-prediction-and-indicators  
+* http://topepo.github.io/caret/index.html  
+* https://www.youtube.com/watch?v=SeyghJ5cdm4&feature=youtu.be  
+* https://www.rdocumentation.org/packages/rpart/versions/4.1-15/topics/rpart  
+* https://stackoverflow.com/questions/33767804/invalid-prediction-for-rpart-object-error  
+* https://machinelearningmastery.com/overfitting-and-underfitting-with-machine-learning-algorithms/  
+* https://www.gormanalysis.com/blog/decision-trees-in-r-using-rpart/  
+* https://www.kaggle.com/wguesdon/tuning-random-forest-parameters/edit  
 
-For Rstudio  
-Erase notebook output  
-https://community.rstudio.com/t/shortcut-to-remove-results-from-r-notebook/9147  
+### For Rstudio  
+* https://community.rstudio.com/t/shortcut-to-remove-results-from-r-notebook/9147  

@@ -1,27 +1,28 @@
 Heart Disease: EDA and Random forest with R
 ================
 William Guesdon
-2019/10/03
+Compiled: February 07, 2021
 
-Introduction
-------------
+## Introduction
 
-It is my first kernel on the community so any feedback would be much appreciated.
-If my work is useful to you, please upvote the code.
-Thanks!
+It is my first kernel on the community so any feedback would be much
+appreciated.  
+If my work is useful to you, please upvote the code.  
+Thanks\!
 
-Load libraries
---------------
+## Load libraries
 
--   tidyverse: For data cleaning, sorting, and visualization
--   DataExplorer: For Exploratory Data Analysis
--   gridExtra: To plot several plots in one figure
--   ggpubr: To prepare publication-ready plots
--   GGally: For correlations
--   caTools: For classification model
--   rpart: For classification model
--   rattle: Plot nicer descision trees
--   randomForest: For Random Forest model
+  - tidyverse: For data cleaning, sorting, and visualization  
+  - DataExplorer: For Exploratory Data Analysis  
+  - gridExtra: To plot several plots in one figure  
+  - ggpubr: To prepare publication-ready plots  
+  - GGally: For correlations  
+  - caTools: For classification model
+  - rpart: For classification model  
+  - rattle: Plot nicer descision trees  
+  - randomForest: For Random Forest model
+
+<!-- end list -->
 
 ``` r
 library(tidyverse)  # For data cleaning, sorting, and visualization
@@ -35,40 +36,47 @@ library(rattle) # Plot nicer descision trees
 library(randomForest) # For Random Forest model
 ```
 
-I Data
-------
+## I Data
 
-heart-disease-uci Kaggle <https://www.kaggle.com/ronitf/heart-disease-uci>
+heart-disease-uci Kaggle
+<https://www.kaggle.com/ronitf/heart-disease-uci>
 
-Useful links for this dataset
-<https://lucdemortier.github.io/projects/3_mcnulty>
-<https://www.kaggle.com/ronitf/heart-disease-uci/discussion/105877>
+Useful links for this dataset  
+<https://lucdemortier.github.io/projects/3_mcnulty>  
+<https://www.kaggle.com/ronitf/heart-disease-uci/discussion/105877>  
 <https://www.kaggle.com/ronitf/heart-disease-uci/discussion/93372>
 
-**As explained on the links above, it is essential to note that on this dataset, the target value 0 indicates that the patient has heart disease.**
+**As explained on the links above, it is essential to note that on this
+dataset, the target value 0 indicates that the patient has heart
+disease.**
 
-Attribute Information:
-age: age in years
-sex: (1 = male; 0 = female)
-cp: chest pain type (typical angina, atypical angina, non-angina, or asymptomatic angina)
-trestbps: resting blood pressure (in mm Hg on admission to the hospital)
-chol: serum cholestoral in mg/dl
-fbs: Fasting blood sugar (&lt; 120 mg/dl or &gt; 120 mg/dl) (1 = true; 0 = false)
-restecg: resting electrocardiographic results (normal, ST-T wave abnormality, or left ventricular hypertrophy)
-thalach: Max. heart rate achieved during thalium stress test
-exang: Exercise induced angina (1 = yes; 0 = no)
-oldpeak: ST depression induced by exercise relative to rest
-slope: Slope of peak exercise ST segment (0 = upsloping, 1 = flat, or 2 = downsloping)
-ca: number of major vessels (0-3) colored by flourosopy 4 = NA
-thal: Thalium stress test result 3 = normal; 6 = fixed defect; 7 = reversable defect 0 = NA
+Attribute Information:  
+age: age in years  
+sex: (1 = male; 0 = female)  
+cp: chest pain type (typical angina, atypical angina, non-angina, or
+asymptomatic angina)  
+trestbps: resting blood pressure (in mm Hg on admission to the
+hospital)  
+chol: serum cholestoral in mg/dl  
+fbs: Fasting blood sugar (\< 120 mg/dl or \> 120 mg/dl) (1 = true; 0 =
+false)  
+restecg: resting electrocardiographic results (normal, ST-T wave
+abnormality, or left ventricular hypertrophy)  
+thalach: Max. heart rate achieved during thalium stress test  
+exang: Exercise induced angina (1 = yes; 0 = no)  
+oldpeak: ST depression induced by exercise relative to rest  
+slope: Slope of peak exercise ST segment (0 = upsloping, 1 = flat, or 2
+= downsloping)  
+ca: number of major vessels (0-3) colored by flourosopy 4 = NA  
+thal: Thalium stress test result 3 = normal; 6 = fixed defect; 7 =
+reversable defect 0 = NA  
 target: Heart disease status 1 or 0 (0 = heart disease 1 = asymptomatic)
 
 ``` r
-df <- read_csv("heart.csv") # To read file on Kaggle
+df <- read_csv("./Data/heart.csv") # To read file on Kaggle
 ```
 
-II Tidy dataset
----------------
+## II Tidy dataset
 
 ``` r
 copy <- df
@@ -128,35 +136,34 @@ df2 <- df %>%
 glimpse(df2) # Check that the transformnation worked
 ```
 
-    ## Observations: 296
-    ## Variables: 14
-    ## $ age      <dbl> 63, 37, 41, 56, 57, 57, 56, 44, 52, 57, 54, 48, 49, 64,…
-    ## $ sex      <fct> male, male, female, male, female, male, female, male, m…
-    ## $ cp       <fct> typical angina, non-anginal, atypical angina, atypical …
-    ## $ trestbps <dbl> 145, 130, 130, 120, 120, 140, 140, 120, 172, 150, 140, …
-    ## $ chol     <dbl> 233, 250, 204, 236, 354, 192, 294, 263, 199, 168, 239, …
-    ## $ fbs      <fct> >120, <=120, <=120, <=120, <=120, <=120, <=120, <=120, …
-    ## $ restecg  <chr> "hypertrophy", "normal", "hypertrophy", "normal", "norm…
-    ## $ thalach  <dbl> 150, 187, 172, 178, 163, 148, 153, 173, 162, 174, 160, …
-    ## $ exang    <fct> no, no, no, no, yes, no, no, no, no, no, no, no, no, ye…
-    ## $ oldpeak  <dbl> 2.3, 3.5, 1.4, 0.8, 0.6, 0.4, 1.3, 0.0, 0.5, 1.6, 1.2, …
-    ## $ slope    <fct> downsloping, downsloping, upsloping, upsloping, upslopi…
-    ## $ ca       <fct> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0…
-    ## $ thal     <fct> fixed defect, normal, normal, normal, normal, fixed def…
-    ## $ target   <chr> "asymptomatic", "asymptomatic", "asymptomatic", "asympt…
+    ## Rows: 296
+    ## Columns: 14
+    ## $ age      <dbl> 63, 37, 41, 56, 57, 57, 56, 44, 52, 57, 54, 48, 49, 64, 58, …
+    ## $ sex      <fct> male, male, female, male, female, male, female, male, male, …
+    ## $ cp       <fct> typical angina, non-anginal, atypical angina, atypical angin…
+    ## $ trestbps <dbl> 145, 130, 130, 120, 120, 140, 140, 120, 172, 150, 140, 130, …
+    ## $ chol     <dbl> 233, 250, 204, 236, 354, 192, 294, 263, 199, 168, 239, 275, …
+    ## $ fbs      <fct> >120, <=120, <=120, <=120, <=120, <=120, <=120, <=120, >120,…
+    ## $ restecg  <chr> "hypertrophy", "normal", "hypertrophy", "normal", "normal", …
+    ## $ thalach  <dbl> 150, 187, 172, 178, 163, 148, 153, 173, 162, 174, 160, 139, …
+    ## $ exang    <fct> no, no, no, no, yes, no, no, no, no, no, no, no, no, yes, no…
+    ## $ oldpeak  <dbl> 2.3, 3.5, 1.4, 0.8, 0.6, 0.4, 1.3, 0.0, 0.5, 1.6, 1.2, 0.2, …
+    ## $ slope    <fct> downsloping, downsloping, upsloping, upsloping, upsloping, f…
+    ## $ ca       <fct> 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, …
+    ## $ thal     <fct> fixed defect, normal, normal, normal, normal, fixed defect, …
+    ## $ target   <chr> "asymptomatic", "asymptomatic", "asymptomatic", "asymptomati…
 
 ``` r
 plot_missing(df2) # Check that the transformation did not induce NA values
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-3-1.png)<!-- -->
 
 ``` r
 df <- df2 # Replace the df dataset by the tidy dataset
 ```
 
-III Exploratory Data Analysis
------------------------------
+## III Exploratory Data Analysis
 
 ### A Visualize the data summary and distribution of each variable
 
@@ -194,21 +201,23 @@ df %>%
     ##                    
     ## 
 
-Use the DataExplorer library to get a sense of the distribution of the continuous and categorical variables.
+Use the DataExplorer library to get a sense of the distribution of the
+continuous and categorical variables.
 
 ``` r
 plot_density(df, ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-5-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-5-1.png)<!-- -->
 
 ``` r
 plot_bar(df, ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-5-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-5-2.png)<!-- -->
 
-The next step is to combine dplyr and Data Explorer libraries to visualize the variables according to gender and disease.
+The next step is to combine dplyr and Data Explorer libraries to
+visualize the variables according to gender and disease.
 
 ### B Analyze each variable per gender
 
@@ -218,7 +227,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -226,7 +235,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-6-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-6-2.png)<!-- -->
 
 ``` r
 df %>%
@@ -234,7 +243,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -242,7 +251,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-7-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
 
 ### C Visualize variables per disease status
 
@@ -252,7 +261,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -260,7 +269,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-8-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 df %>%
@@ -268,7 +277,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -276,7 +285,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-9-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
 
 ### Visualize the data per gender and disease status
 
@@ -286,7 +295,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-10-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -294,7 +303,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-10-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
 
 ``` r
 df %>%
@@ -302,7 +311,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-11-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -310,7 +319,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-11-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 ``` r
 df %>%
@@ -318,7 +327,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-12-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -326,7 +335,7 @@ df %>%
   plot_density(ggtheme = theme_classic2(), geom_density_args = list("fill" = "black", "alpha" = 0.6))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-12-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-12-2.png)<!-- -->
 
 ``` r
 df %>%
@@ -334,7 +343,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-13-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
 
 ``` r
 df %>%
@@ -342,7 +351,7 @@ df %>%
   plot_bar(ggtheme = theme_classic2())
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-13-2.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-13-2.png)<!-- -->
 
 ### Prepare a summary table per disease and gender
 
@@ -364,22 +373,23 @@ df %>%
   )
 ```
 
+    ## `summarise()` has grouped output by 'target'. You can override using the `.groups` argument.
+
     ## # A tibble: 4 x 13
     ## # Groups:   target [2]
-    ##   target sex   n_disease mean_age sd_age mean_trestbps sd_trestbps
-    ##   <chr>  <fct>     <int>    <dbl>  <dbl>         <dbl>       <dbl>
-    ## 1 asymp… fema…        71     54.6  10.3           129.        16.6
-    ## 2 asymp… male         89     51.1   8.63          130.        16.2
-    ## 3 heart… fema…        24     59.0   4.96          146.        21.4
-    ## 4 heart… male        112     56.2   8.36          132.        17.4
-    ## # … with 6 more variables: mean_chol <dbl>, sd_chol <dbl>,
-    ## #   mean_thalach <dbl>, sd_thalach <dbl>, mean_oldpeak <dbl>,
-    ## #   sd_oldpeak <dbl>
+    ##   target sex   n_disease mean_age sd_age mean_trestbps sd_trestbps mean_chol
+    ##   <chr>  <fct>     <int>    <dbl>  <dbl>         <dbl>       <dbl>     <dbl>
+    ## 1 asymp… fema…        71     54.6  10.3           129.        16.6      257.
+    ## 2 asymp… male         89     51.1   8.63          130.        16.2      232.
+    ## 3 heart… fema…        24     59.0   4.96          146.        21.4      275.
+    ## 4 heart… male        112     56.2   8.36          132.        17.4      246.
+    ## # … with 5 more variables: sd_chol <dbl>, mean_thalach <dbl>, sd_thalach <dbl>,
+    ## #   mean_oldpeak <dbl>, sd_oldpeak <dbl>
 
-IV Data Visualization
----------------------
+## IV Data Visualization
 
-From the Exploratory Data analysis, it seems that several differences are statistically significant according to gender and health status.
+From the Exploratory Data analysis, it seems that several differences
+are statistically significant according to gender and health status.
 
 ### A Visualization of variables per gender
 
@@ -450,7 +460,7 @@ suppressWarnings(ggarrange(a1, b1, c1, d1, e1, f1,
             align = "v"))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-15-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
 
 ``` r
 # Disease status
@@ -530,9 +540,11 @@ ggarrange(g1, h1, i1, j1, k1, l1, m1, n1,
           align = "v")
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-16-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-16-1.png)<!-- -->
 
-**From this first plot, it appears that this dataset contains more males patients with a higher proportion of heart disease compared to female patients.**
+**From this first plot, it appears that this dataset contains more males
+patients with a higher proportion of heart disease compared to female
+patients.**
 
 ### B Visualization of variables per disease status
 
@@ -610,9 +622,11 @@ ggarrange(a2, b2, c2, d2, e2, f2,
             align = "v")
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-18-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
-**Male patients with heart disease are significantly older, have higher cholesterol level, and reduced maximum heart rate response to the thallium test. **
+**Male patients with heart disease are significantly older, have higher
+cholesterol level, and reduced maximum heart rate response to the
+thallium test. **
 
 ``` r
 # Disease status
@@ -692,7 +706,7 @@ ggarrange(g2, h2, i2, j2, k2, l2, m2, n2,
           align = "v")
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-19-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-19-1.png)<!-- -->
 
 #### 2 Female patients
 
@@ -768,9 +782,12 @@ suppressWarnings(ggarrange(a2, b2, c2, d2, e2, f2,
             align = "v"))
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-21-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-21-1.png)<!-- -->
 
-**There is less woman with heart disease on this data set. Women with heart disease have a significantly higher resting blood presure contrary to male with heart disease. Similarly to men, women with heart disease have a lower maximum heart rate in response to the thallium test. **
+**There is less woman with heart disease on this data set. Women with
+heart disease have a significantly higher resting blood presure contrary
+to male with heart disease. Similarly to men, women with heart disease
+have a lower maximum heart rate in response to the thallium test. **
 
 ``` r
 # Disease status
@@ -850,10 +867,9 @@ ggarrange(g2, h2, i2, j2, k2, l2, m2, n2,
           align = "v")
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-22-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
 
-V Correlations
---------------
+## V Correlations
 
 ### A use the numerical dataset
 
@@ -869,7 +885,7 @@ df <- copy %>%
 GGally::ggcorr(df, geom = "circle")
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-24-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-24-1.png)<!-- -->
 
 ``` r
 select2 <- df %>%
@@ -886,56 +902,54 @@ select2 <- df %>%
 ggcorr(select2, geom = "circle")
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-26-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-26-1.png)<!-- -->
 
 ``` r
 ggpairs(df)
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-27-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-27-1.png)<!-- -->
 
 ``` r
 ggpairs(select2)
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-28-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-28-1.png)<!-- -->
 
-From the correlation study it seems that the parameters
-\* cp
-\* restecg
-\* thalach
-\* slope
+From the correlation study it seems that the parameters  
+\* cp  
+\* restecg  
+\* thalach  
+\* slope  
 are the most usefull to predict the risk of heart disease
 
-From the EDA anlysis it semms that
-\* age
-\* sex
-\* cholesterol
-\* restecg
+From the EDA anlysis it semms that  
+\* age  
+\* sex  
+\* cholesterol  
+\* restecg  
 are also usefull
 
-For prediction the following variables seems the most usefull
-\* age
-\* sex
-\* cholesterol
-\* restecg
-\* cp
-\* thalach
+For prediction the following variables seems the most usefull  
+\* age  
+\* sex  
+\* cholesterol  
+\* restecg  
+\* cp  
+\* thalach  
 \* slope
 
-VI Machine Learning: classification model with rpart and random forest packages
--------------------------------------------------------------------------------
+## VI Machine Learning: classification model with rpart and random forest packages
 
-1.  Select the columns usefull for prediction according to the EDA analysis.
-2.  Separate the data set in a train and test subsets.
-3.  Build a classification tree model with rpart.
+1.  Select the columns usefull for prediction according to the EDA
+    analysis.  
+2.  Separate the data set in a train and test subsets.  
+3.  Build a classification tree model with rpart.  
 4.  Print model accuracy and descision tree.
 
 ### A Use select columns for classification
 
 ``` r
-# glimpse(df)
-
 df_select <- df %>%
   dplyr::select( #because of conflict between MASS and dplyr select need to use dplyr::select
     target,
@@ -955,7 +969,7 @@ df_select$target <- factor(df_select$target) # Define target as a factor. rpart 
 accuracy <- 0
 
 # Build a simple classification desicion tree with rpart. Run the model until the accuracy reach the selected minimum.
-while(accuracy <= 0.88) {
+while(accuracy <= 0.85) {
   split_values <- sample.split(df_select$target, SplitRatio = 0.65)
   train_set <- subset(df_select, split_values == T)
   test_set <- subset(df_select, split_values == F)
@@ -967,14 +981,14 @@ while(accuracy <= 0.88) {
 }
 ```
 
-Print model accuracy.
+Print model accuracy.  
 According to parameters the model should be at least 88% accurate.
 
 ``` r
 cat("Model accuracy", round(accuracy, digits = 2)*100, "%")  
 ```
 
-    ## Model accuracy 88 %
+    ## Model accuracy 87 %
 
 Print the desicion tree.
 
@@ -983,7 +997,7 @@ Print the desicion tree.
 fancyRpartPlot(mod_class, , caption = NULL)
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-32-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-32-1.png)<!-- -->
 
 ``` r
 # plot(mod_class)
@@ -1010,14 +1024,14 @@ while(accuracy <= 0.88) {
 }
 ```
 
-Print model accuracy.
+Print model accuracy.  
 According to parameters the model should be at least 88% accurate.
 
 ``` r
 cat("Model accuracy", round(accuracy, digits = 2)*100, "%")  
 ```
 
-    ## Model accuracy 90 %
+    ## Model accuracy 88 %
 
 Print the desicion tree.
 
@@ -1026,7 +1040,7 @@ Print the desicion tree.
 fancyRpartPlot(mod_class, , caption = NULL)
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-35-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-35-1.png)<!-- -->
 
 ``` r
 # plot(mod_class)
@@ -1043,39 +1057,39 @@ ValidSet <- df_select[-train,]
 summary(TrainSet)
 ```
 
-    ##  target       age             sex             chol          restecg      
-    ##  0: 97   Min.   :29.00   Min.   :0.000   Min.   :131.0   Min.   :0.0000  
-    ##  1:110   1st Qu.:48.00   1st Qu.:0.000   1st Qu.:208.5   1st Qu.:0.0000  
-    ##          Median :56.00   Median :1.000   Median :243.0   Median :1.0000  
-    ##          Mean   :54.79   Mean   :0.657   Mean   :248.0   Mean   :0.5314  
-    ##          3rd Qu.:62.00   3rd Qu.:1.000   3rd Qu.:275.5   3rd Qu.:1.0000  
-    ##          Max.   :77.00   Max.   :1.000   Max.   :564.0   Max.   :2.0000  
+    ##  target       age             sex              chol        restecg      
+    ##  0: 93   Min.   :29.00   Min.   :0.0000   Min.   :126   Min.   :0.0000  
+    ##  1:114   1st Qu.:46.50   1st Qu.:0.0000   1st Qu.:211   1st Qu.:0.0000  
+    ##          Median :55.00   Median :1.0000   Median :239   Median :1.0000  
+    ##          Mean   :54.03   Mean   :0.6908   Mean   :246   Mean   :0.5411  
+    ##          3rd Qu.:60.00   3rd Qu.:1.0000   3rd Qu.:277   3rd Qu.:1.0000  
+    ##          Max.   :77.00   Max.   :1.0000   Max.   :564   Max.   :2.0000  
     ##        cp            thalach          slope      
-    ##  Min.   :0.0000   Min.   : 71.0   Min.   :0.000  
+    ##  Min.   :0.0000   Min.   : 88.0   Min.   :0.000  
     ##  1st Qu.:0.0000   1st Qu.:132.0   1st Qu.:1.000  
-    ##  Median :1.0000   Median :153.0   Median :1.000  
-    ##  Mean   :0.9082   Mean   :149.1   Mean   :1.411  
-    ##  3rd Qu.:2.0000   3rd Qu.:166.0   3rd Qu.:2.000  
+    ##  Median :1.0000   Median :152.0   Median :1.000  
+    ##  Mean   :0.9903   Mean   :149.3   Mean   :1.377  
+    ##  3rd Qu.:2.0000   3rd Qu.:167.5   3rd Qu.:2.000  
     ##  Max.   :3.0000   Max.   :202.0   Max.   :2.000
 
 ``` r
 summary(ValidSet)
 ```
 
-    ##  target      age            sex              chol          restecg      
-    ##  0:39   Min.   :34.0   Min.   :0.0000   Min.   :126.0   Min.   :0.0000  
-    ##  1:50   1st Qu.:46.0   1st Qu.:0.0000   1st Qu.:214.0   1st Qu.:0.0000  
-    ##         Median :56.0   Median :1.0000   Median :239.0   Median :0.0000  
-    ##         Mean   :53.9   Mean   :0.7303   Mean   :245.1   Mean   :0.5056  
-    ##         3rd Qu.:60.0   3rd Qu.:1.0000   3rd Qu.:274.0   3rd Qu.:1.0000  
-    ##         Max.   :76.0   Max.   :1.0000   Max.   :394.0   Max.   :2.0000  
-    ##        cp           thalach          slope     
-    ##  Min.   :0.000   Min.   : 90.0   Min.   :0.00  
-    ##  1st Qu.:0.000   1st Qu.:140.0   1st Qu.:1.00  
-    ##  Median :1.000   Median :152.0   Median :1.00  
-    ##  Mean   :1.079   Mean   :150.5   Mean   :1.36  
-    ##  3rd Qu.:2.000   3rd Qu.:165.0   3rd Qu.:2.00  
-    ##  Max.   :3.000   Max.   :187.0   Max.   :2.00
+    ##  target      age             sex              chol          restecg      
+    ##  0:43   Min.   :34.00   Min.   :0.0000   Min.   :131.0   Min.   :0.0000  
+    ##  1:46   1st Qu.:50.00   1st Qu.:0.0000   1st Qu.:213.0   1st Qu.:0.0000  
+    ##         Median :57.00   Median :1.0000   Median :245.0   Median :0.0000  
+    ##         Mean   :55.67   Mean   :0.6517   Mean   :249.9   Mean   :0.4831  
+    ##         3rd Qu.:62.00   3rd Qu.:1.0000   3rd Qu.:274.0   3rd Qu.:1.0000  
+    ##         Max.   :74.00   Max.   :1.0000   Max.   :417.0   Max.   :1.0000  
+    ##        cp            thalach          slope      
+    ##  Min.   :0.0000   Min.   : 71.0   Min.   :0.000  
+    ##  1st Qu.:0.0000   1st Qu.:142.0   1st Qu.:1.000  
+    ##  Median :0.0000   Median :154.0   Median :2.000  
+    ##  Mean   :0.8876   Mean   :150.2   Mean   :1.438  
+    ##  3rd Qu.:2.0000   3rd Qu.:163.0   3rd Qu.:2.000  
+    ##  Max.   :3.0000   Max.   :192.0   Max.   :2.000
 
 ``` r
 # Create a Random Forest model with default parameters
@@ -1090,11 +1104,11 @@ model1
     ##                      Number of trees: 1000
     ## No. of variables tried at each split: 1
     ## 
-    ##         OOB estimate of  error rate: 24.15%
+    ##         OOB estimate of  error rate: 26.09%
     ## Confusion matrix:
     ##    0  1 class.error
-    ## 0 73 24   0.2474227
-    ## 1 26 84   0.2363636
+    ## 0 66 27   0.2903226
+    ## 1 27 87   0.2368421
 
 ``` r
 # Predicting on train set
@@ -1105,8 +1119,8 @@ table(predTrain, TrainSet$target)
 
     ##          
     ## predTrain   0   1
-    ##         0  89  10
-    ##         1   8 100
+    ##         0  84  10
+    ##         1   9 104
 
 ``` r
 # Predicting on Validation set
@@ -1115,7 +1129,7 @@ predValid <- predict(model1, ValidSet, type = "class")
 mean(predValid == ValidSet$target)                    
 ```
 
-    ## [1] 0.7640449
+    ## [1] 0.8426966
 
 ``` r
 table(predValid,ValidSet$target)
@@ -1123,28 +1137,28 @@ table(predValid,ValidSet$target)
 
     ##          
     ## predValid  0  1
-    ##         0 29 11
-    ##         1 10 39
+    ##         0 34  5
+    ##         1  9 41
 
 ``` r
 # To check important variables
 importance(model1)        
 ```
 
-    ##                  0         1 MeanDecreaseAccuracy MeanDecreaseGini
-    ## age      7.8308360  7.500942            11.060396         9.903534
-    ## sex     13.5452246 12.628633            16.708060         4.766387
-    ## chol    -6.2685824  1.493231            -3.139215         8.623771
-    ## restecg -0.3076745  2.671931             1.714888         2.621840
-    ## cp      30.4267135 28.437656            33.902503        16.523874
-    ## thalach  9.6879548  9.466066            13.411195        12.879703
-    ## slope   17.9971140 12.860273            20.070507         7.512333
+    ##                  0          1 MeanDecreaseAccuracy MeanDecreaseGini
+    ## age      8.5635858  8.1274728           11.2387546        10.754847
+    ## sex     20.7787044 16.4186188           22.8891913         5.828656
+    ## chol    -0.6401581  0.1514547           -0.3373315         9.016257
+    ## restecg  3.2825129 -0.2000304            2.0950618         2.718995
+    ## cp      21.0887042 22.3577590           25.9377637        11.363132
+    ## thalach 13.9497972 12.7792174           18.4671834        13.544435
+    ## slope   16.3291696 14.9037870           20.2973077         7.420501
 
 ``` r
 varImpPlot(model1)  
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-40-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-40-1.png)<!-- -->
 
 ### D Use the full dataset for classification with random forest
 
@@ -1156,32 +1170,32 @@ ValidSet <- df[-train,]
 summary(TrainSet)
 ```
 
-    ##       age             sex              cp            trestbps    
-    ##  Min.   :29.00   Min.   :0.000   Min.   :0.0000   Min.   : 94.0  
-    ##  1st Qu.:48.00   1st Qu.:0.000   1st Qu.:0.0000   1st Qu.:120.0  
-    ##  Median :56.00   Median :1.000   Median :1.0000   Median :130.0  
-    ##  Mean   :54.79   Mean   :0.657   Mean   :0.9082   Mean   :131.7  
-    ##  3rd Qu.:62.00   3rd Qu.:1.000   3rd Qu.:2.0000   3rd Qu.:140.0  
-    ##  Max.   :77.00   Max.   :1.000   Max.   :3.0000   Max.   :200.0  
-    ##       chol            fbs            restecg          thalach     
-    ##  Min.   :131.0   Min.   :0.0000   Min.   :0.0000   Min.   : 71.0  
-    ##  1st Qu.:208.5   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:132.0  
-    ##  Median :243.0   Median :0.0000   Median :1.0000   Median :153.0  
-    ##  Mean   :248.0   Mean   :0.1449   Mean   :0.5314   Mean   :149.1  
-    ##  3rd Qu.:275.5   3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:166.0  
-    ##  Max.   :564.0   Max.   :1.0000   Max.   :2.0000   Max.   :202.0  
+    ##       age             sex               cp            trestbps    
+    ##  Min.   :29.00   Min.   :0.0000   Min.   :0.0000   Min.   : 94.0  
+    ##  1st Qu.:46.50   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:120.0  
+    ##  Median :55.00   Median :1.0000   Median :1.0000   Median :130.0  
+    ##  Mean   :54.03   Mean   :0.6908   Mean   :0.9903   Mean   :130.6  
+    ##  3rd Qu.:60.00   3rd Qu.:1.0000   3rd Qu.:2.0000   3rd Qu.:140.0  
+    ##  Max.   :77.00   Max.   :1.0000   Max.   :3.0000   Max.   :200.0  
+    ##       chol          fbs            restecg          thalach     
+    ##  Min.   :126   Min.   :0.0000   Min.   :0.0000   Min.   : 88.0  
+    ##  1st Qu.:211   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:132.0  
+    ##  Median :239   Median :0.0000   Median :1.0000   Median :152.0  
+    ##  Mean   :246   Mean   :0.1498   Mean   :0.5411   Mean   :149.3  
+    ##  3rd Qu.:277   3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:167.5  
+    ##  Max.   :564   Max.   :1.0000   Max.   :2.0000   Max.   :202.0  
     ##      exang           oldpeak          slope             ca        
     ##  Min.   :0.0000   Min.   :0.000   Min.   :0.000   Min.   :0.0000  
     ##  1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:1.000   1st Qu.:0.0000  
-    ##  Median :0.0000   Median :0.800   Median :1.000   Median :0.0000  
-    ##  Mean   :0.3333   Mean   :1.047   Mean   :1.411   Mean   :0.6763  
+    ##  Median :0.0000   Median :1.000   Median :1.000   Median :0.0000  
+    ##  Mean   :0.3237   Mean   :1.146   Mean   :1.377   Mean   :0.7053  
     ##  3rd Qu.:1.0000   3rd Qu.:1.800   3rd Qu.:2.000   3rd Qu.:1.0000  
-    ##  Max.   :1.0000   Max.   :6.200   Max.   :2.000   Max.   :3.0000  
+    ##  Max.   :1.0000   Max.   :5.600   Max.   :2.000   Max.   :3.0000  
     ##       thal       target 
-    ##  Min.   :1.000   0: 97  
-    ##  1st Qu.:2.000   1:110  
+    ##  Min.   :1.000   0: 93  
+    ##  1st Qu.:2.000   1:114  
     ##  Median :2.000          
-    ##  Mean   :2.319          
+    ##  Mean   :2.309          
     ##  3rd Qu.:3.000          
     ##  Max.   :3.000
 
@@ -1189,32 +1203,32 @@ summary(TrainSet)
 summary(ValidSet)
 ```
 
-    ##       age            sex               cp           trestbps    
-    ##  Min.   :34.0   Min.   :0.0000   Min.   :0.000   Min.   :100.0  
-    ##  1st Qu.:46.0   1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:120.0  
-    ##  Median :56.0   Median :1.0000   Median :1.000   Median :130.0  
-    ##  Mean   :53.9   Mean   :0.7303   Mean   :1.079   Mean   :131.4  
-    ##  3rd Qu.:60.0   3rd Qu.:1.0000   3rd Qu.:2.000   3rd Qu.:140.0  
-    ##  Max.   :76.0   Max.   :1.0000   Max.   :3.000   Max.   :180.0  
+    ##       age             sex               cp            trestbps  
+    ##  Min.   :34.00   Min.   :0.0000   Min.   :0.0000   Min.   : 94  
+    ##  1st Qu.:50.00   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:120  
+    ##  Median :57.00   Median :1.0000   Median :0.0000   Median :132  
+    ##  Mean   :55.67   Mean   :0.6517   Mean   :0.8876   Mean   :134  
+    ##  3rd Qu.:62.00   3rd Qu.:1.0000   3rd Qu.:2.0000   3rd Qu.:145  
+    ##  Max.   :74.00   Max.   :1.0000   Max.   :3.0000   Max.   :180  
     ##       chol            fbs            restecg          thalach     
-    ##  Min.   :126.0   Min.   :0.0000   Min.   :0.0000   Min.   : 90.0  
-    ##  1st Qu.:214.0   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:140.0  
-    ##  Median :239.0   Median :0.0000   Median :0.0000   Median :152.0  
-    ##  Mean   :245.1   Mean   :0.1461   Mean   :0.5056   Mean   :150.5  
-    ##  3rd Qu.:274.0   3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:165.0  
-    ##  Max.   :394.0   Max.   :1.0000   Max.   :2.0000   Max.   :187.0  
-    ##      exang           oldpeak          slope            ca        
-    ##  Min.   :0.0000   Min.   :0.000   Min.   :0.00   Min.   :0.0000  
-    ##  1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:1.00   1st Qu.:0.0000  
-    ##  Median :0.0000   Median :1.000   Median :1.00   Median :0.0000  
-    ##  Mean   :0.3146   Mean   :1.088   Mean   :1.36   Mean   :0.6854  
-    ##  3rd Qu.:1.0000   3rd Qu.:1.600   3rd Qu.:2.00   3rd Qu.:1.0000  
-    ##  Max.   :1.0000   Max.   :4.200   Max.   :2.00   Max.   :3.0000  
+    ##  Min.   :131.0   Min.   :0.0000   Min.   :0.0000   Min.   : 71.0  
+    ##  1st Qu.:213.0   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:142.0  
+    ##  Median :245.0   Median :0.0000   Median :0.0000   Median :154.0  
+    ##  Mean   :249.9   Mean   :0.1348   Mean   :0.4831   Mean   :150.2  
+    ##  3rd Qu.:274.0   3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:163.0  
+    ##  Max.   :417.0   Max.   :1.0000   Max.   :1.0000   Max.   :192.0  
+    ##      exang           oldpeak           slope             ca       
+    ##  Min.   :0.0000   Min.   :0.0000   Min.   :0.000   Min.   :0.000  
+    ##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:1.000   1st Qu.:0.000  
+    ##  Median :0.0000   Median :0.5000   Median :2.000   Median :0.000  
+    ##  Mean   :0.3371   Mean   :0.8573   Mean   :1.438   Mean   :0.618  
+    ##  3rd Qu.:1.0000   3rd Qu.:1.2000   3rd Qu.:2.000   3rd Qu.:1.000  
+    ##  Max.   :1.0000   Max.   :6.2000   Max.   :2.000   Max.   :3.000  
     ##       thal       target
-    ##  Min.   :1.000   0:39  
-    ##  1st Qu.:2.000   1:50  
+    ##  Min.   :1.000   0:43  
+    ##  1st Qu.:2.000   1:46  
     ##  Median :2.000         
-    ##  Mean   :2.348         
+    ##  Mean   :2.371         
     ##  3rd Qu.:3.000         
     ##  Max.   :3.000
 
@@ -1231,11 +1245,11 @@ model2
     ##                      Number of trees: 1000
     ## No. of variables tried at each split: 2
     ## 
-    ##         OOB estimate of  error rate: 15.46%
+    ##         OOB estimate of  error rate: 19.81%
     ## Confusion matrix:
     ##    0  1 class.error
-    ## 0 76 21   0.2164948
-    ## 1 11 99   0.1000000
+    ## 0 71 22   0.2365591
+    ## 1 19 95   0.1666667
 
 ``` r
 # Predicting on train set
@@ -1246,8 +1260,8 @@ table(predTrain, TrainSet$target)
 
     ##          
     ## predTrain   0   1
-    ##         0  97   0
-    ##         1   0 110
+    ##         0  93   0
+    ##         1   0 114
 
 ``` r
 # Predicting on Validation set
@@ -1256,7 +1270,7 @@ predValid <- predict(model2, ValidSet, type = "class")
 mean(predValid == ValidSet$target)                    
 ```
 
-    ## [1] 0.8202247
+    ## [1] 0.8876404
 
 ``` r
 table(predValid,ValidSet$target)
@@ -1264,8 +1278,8 @@ table(predValid,ValidSet$target)
 
     ##          
     ## predValid  0  1
-    ##         0 31  8
-    ##         1  8 42
+    ##         0 34  1
+    ##         1  9 45
 
 ``` r
 # To check important variables
@@ -1273,61 +1287,66 @@ importance(model2)
 ```
 
     ##                   0          1 MeanDecreaseAccuracy MeanDecreaseGini
-    ## age       1.9676537  7.4294131             6.825350         7.824867
-    ## sex      11.7375222 11.6045293            15.768390         3.323894
-    ## cp       23.8315080 22.3921462            28.703139        14.622871
-    ## trestbps  3.9641573  2.7046781             4.767543         7.285673
-    ## chol     -6.5801540  1.9087044            -2.817777         7.448693
-    ## fbs       2.9756425  6.4035578             6.759748         1.254012
-    ## restecg  -0.1172384  2.3698922             1.568389         2.165172
-    ## thalach   8.7515794  9.6838947            12.550395        10.437520
-    ## exang    13.2606242 11.4014385            17.052670         6.058636
-    ## oldpeak  17.9622689 17.5607530            23.897824        12.503898
-    ## slope    11.8940376 -0.1024015             9.077833         4.436591
-    ## ca       19.3827669 23.2344909            27.366548        10.238490
-    ## thal     13.0287367 21.3247815            22.918721        10.014776
+    ## age       3.5531855  6.9841836           7.26413831         8.399466
+    ## sex       5.4296622 10.6451739          11.20179489         3.769720
+    ## cp       13.1854993  8.8365604          14.94704991         9.342946
+    ## trestbps -0.7248403  2.6564089           1.49917817         7.100646
+    ## chol     -1.4289861 -1.6216622          -2.22440917         7.682719
+    ## fbs       0.1249613  1.5281060           1.23237510         1.435625
+    ## restecg  -0.1085154  0.4856894           0.04541514         2.184212
+    ## thalach   2.2711310  9.6719216           8.58938320        11.784905
+    ## exang     7.4776841  7.2417434          10.31578378         5.023431
+    ## oldpeak  16.7213070 13.5158911          20.58424679        12.044601
+    ## slope     8.5126201  5.2090096           9.46218293         4.917241
+    ## ca       23.4603133 28.5683118          32.68822956        14.574756
+    ## thal     13.2246941 19.8485560          22.23692307         8.882171
 
 ``` r
 varImpPlot(model2)  
 ```
 
-![](heart-disease-eda-and-random-forest-with-r_files/figure-markdown_github/unnamed-chunk-45-1.png)
+![](heart-disease-eda-and-random-forest-with-r_files/figure-gfm/unnamed-chunk-45-1.png)<!-- -->
 
-References
-----------
+## References
 
-Data transformation
-<https://archive.ics.uci.edu/ml/datasets/Heart+Disease>
-<https://lucdemortier.github.io/projects/3_mcnulty>
-<https://www.kaggle.com/ronitf/heart-disease-uci/discussion/105877>
+### Data transformation
 
-Kaggles notebooks:
-R notebooks:
-<https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r>
-<https://www.kaggle.com/joemenifee/heart-disease-uci-data-exploratory>
+  - <https://archive.ics.uci.edu/ml/datasets/Heart+Disease>  
+  - <https://lucdemortier.github.io/projects/3_mcnulty>  
+  - <https://www.kaggle.com/ronitf/heart-disease-uci/discussion/105877>
 
-Data Processing
-<http://www.cookbook-r.com/> <https://bookdown.org/rdpeng/exdata/managing-data-frames-with-the-dplyr-package.html#data-frames> <https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html>
-<https://towardsdatascience.com/simple-fast-exploratory-data-analysis-in-r-with-dataexplorer-package-e055348d9619>
-<http://www.sthda.com/english/articles/24-ggpubr-publication-ready-plots/81-ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page/>
-<https://www.r-graph-gallery.com/267-reorder-a-variable-in-ggplot2>
-for categorical variable
-<https://www.analyticsvidhya.com/blog/2015/11/easy-methods-deal-categorical-variables-predictive-modeling/>
-for correlations
-<http://www.sthda.com/english/wiki/ggally-r-package-extension-to-ggplot2-for-correlation-matrix-and-survival-plots-r-software-and-data-visualization>
+### Kaggles notebooks:
 
-for Machine Learning
-<https://www.kaggle.com/naik170106027/prediction-of-heart-diseases>
-<https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r>
-<https://www.kaggle.com/anirbanshaw24/heart-disease-prediction-and-indicators>
-<http://topepo.github.io/caret/index.html>
-<https://www.youtube.com/watch?v=SeyghJ5cdm4&feature=youtu.be>
-<https://www.rdocumentation.org/packages/rpart/versions/4.1-15/topics/rpart>
-<https://stackoverflow.com/questions/33767804/invalid-prediction-for-rpart-object-error>
-<https://machinelearningmastery.com/overfitting-and-underfitting-with-machine-learning-algorithms/>
-<https://www.gormanalysis.com/blog/decision-trees-in-r-using-rpart/>
-<https://www.kaggle.com/wguesdon/tuning-random-forest-parameters/edit>
+  - R notebooks:  
+  - <https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r>  
+  - <https://www.kaggle.com/joemenifee/heart-disease-uci-data-exploratory>
 
-For Rstudio
-Erase notebook output
-<https://community.rstudio.com/t/shortcut-to-remove-results-from-r-notebook/9147>
+### Data Processing
+
+  - <http://www.cookbook-r.com/>
+  - <https://bookdown.org/rdpeng/exdata/managing-data-frames-with-the-dplyr-package.html#data-frames>
+  - <https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html>  
+  - <https://towardsdatascience.com/simple-fast-exploratory-data-analysis-in-r-with-dataexplorer-package-e055348d9619>  
+  - <http://www.sthda.com/english/articles/24-ggpubr-publication-ready-plots/81-ggplot2-easy-way-to-mix-multiple-graphs-on-the-same-page/>  
+  - <https://www.r-graph-gallery.com/267-reorder-a-variable-in-ggplot2>  
+  - for categorical variable  
+  - <https://www.analyticsvidhya.com/blog/2015/11/easy-methods-deal-categorical-variables-predictive-modeling/>  
+    for correlations  
+  - <http://www.sthda.com/english/wiki/ggally-r-package-extension-to-ggplot2-for-correlation-matrix-and-survival-plots-r-software-and-data-visualization>
+
+### for Machine Learning
+
+  - <https://www.kaggle.com/naik170106027/prediction-of-heart-diseases>  
+  - <https://www.kaggle.com/ekrembayar/heart-disease-uci-eda-models-with-r>  
+  - <https://www.kaggle.com/anirbanshaw24/heart-disease-prediction-and-indicators>  
+  - <http://topepo.github.io/caret/index.html>  
+  - <https://www.youtube.com/watch?v=SeyghJ5cdm4&feature=youtu.be>  
+  - <https://www.rdocumentation.org/packages/rpart/versions/4.1-15/topics/rpart>  
+  - <https://stackoverflow.com/questions/33767804/invalid-prediction-for-rpart-object-error>  
+  - <https://machinelearningmastery.com/overfitting-and-underfitting-with-machine-learning-algorithms/>  
+  - <https://www.gormanalysis.com/blog/decision-trees-in-r-using-rpart/>  
+  - <https://www.kaggle.com/wguesdon/tuning-random-forest-parameters/edit>
+
+### For Rstudio
+
+  - <https://community.rstudio.com/t/shortcut-to-remove-results-from-r-notebook/9147>
