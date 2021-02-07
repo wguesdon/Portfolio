@@ -1,13 +1,12 @@
 Determine factors influencing stroke
 ================
-William Guesdon
-2021/01/31
+Compiled: February 07, 2021
 
 # Introduction
 
-The goal of this assignment is to use statistical learning to identify
-the combination of the features that are more likely to be associated
-with stroke. For this analysis, I first performed an exploratory data
+The goal of this project is to use statistical learning to identify the
+combination of the features that are more likely to be associated with
+stroke. For this analysis, I first performed an exploratory data
 analysis and feature engineering. As often seen in health-related
 datasets, the proportion of patients with stroke is low, resulting in a
 severely unbalanced dataset. To compensate for the unbalance, I used the
@@ -2160,25 +2159,25 @@ summary(model)
     ## 
     ## Deviance Residuals: 
     ##     Min       1Q   Median       3Q      Max  
-    ## -2.5480  -0.7748   0.2873   0.7774   2.6042  
+    ## -2.5509  -0.7771   0.2858   0.7807   2.5984  
     ## 
     ## Coefficients:
     ##                     Estimate Std. Error z value Pr(>|z|)    
-    ## (Intercept)       -3.2595792  0.1118086 -29.153   <2e-16 ***
-    ## age                0.0747710  0.0007302 102.396   <2e-16 ***
-    ## gender             0.0169540  0.0210582   0.805    0.421    
-    ## avg_glucose_level  0.0036556  0.0001889  19.355   <2e-16 ***
-    ## ever_smoked        0.2618589  0.0207796  12.602   <2e-16 ***
-    ## hypertension      -0.4442132  0.0257698 -17.238   <2e-16 ***
-    ## heart_disease     -0.6605769  0.0328377 -20.116   <2e-16 ***
+    ## (Intercept)       -3.2937349  0.1113343 -29.584   <2e-16 ***
+    ## age                0.0741193  0.0007249 102.242   <2e-16 ***
+    ## gender             0.0165919  0.0210220   0.789     0.43    
+    ## avg_glucose_level  0.0039204  0.0001885  20.800   <2e-16 ***
+    ## ever_smoked        0.2676622  0.0207569  12.895   <2e-16 ***
+    ## hypertension      -0.4423737  0.0257334 -17.191   <2e-16 ***
+    ## heart_disease     -0.6420870  0.0328269 -19.560   <2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
     ## (Dispersion parameter for binomial family taken to be 1)
     ## 
     ##     Null deviance: 81708  on 58939  degrees of freedom
-    ## Residual deviance: 58867  on 58933  degrees of freedom
-    ## AIC: 58881
+    ## Residual deviance: 59038  on 58933  degrees of freedom
+    ## AIC: 59052
     ## 
     ## Number of Fisher Scoring iterations: 4
 
@@ -2196,7 +2195,7 @@ ll.proposed <- model$deviance/-2
 glue("McFadden's Pseudo R^2: {(ll.null - ll.proposed) / ll.null}")
 ```
 
-    ## McFadden's Pseudo R^2: 0.279541673020032
+    ## McFadden's Pseudo R^2: 0.277450368166833
 
 ``` r
 ## The p-value for the R^2
