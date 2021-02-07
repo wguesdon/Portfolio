@@ -1,5 +1,5 @@
 # Data Science portfolio
-A collection of personal data science and computational biology and projects.
+A collection of personal data science and computational biology projects.
 
 ## About me
 
