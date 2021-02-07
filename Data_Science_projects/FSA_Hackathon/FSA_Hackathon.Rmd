@@ -1,0 +1,673 @@
+---
+title: "FSA Hackathon: young population survey analysis"
+author: "William Guesdon"
+output:
+  github_document:
+    toc: true
+date: 'Compiled: `r format(Sys.Date(), "%B %d, %Y")`'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r include = FALSE, warning = FALSE, message = FALSE}
+library(tidyverse) # Data wrangling
+library(ggplot2) # Data Visualization
+library(DataExplorer) # EDA
+# library(foreign)
+library(cowplot) # plot figures in a grid
+```
+
+```{r include=FALSE}
+#Set up color blind friendly color palette
+# The palette with grey:
+cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# The palette with black:
+cbbPalette <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+
+# To use for fills, add
+  # scale_fill_manual(values=cbPalette)
+
+# To use for line and point colors, add
+  # scale_colour_manual(values=cbPalette)
+```
+
+The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ wider interest in food. The FSA is responsible for making sure food is safe and what it says it is.  
+On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon-tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.
+
+# I Dataset
+## A General population survey
+```{r message = FALSE, echo = FALSE}
+# dir("./Data/Q1_Allergies")
+general <- read_csv("/Users/william/Documents/GitHub/FSA_20191123/Data/Q1_Allergies/food_and_you_wave_5.csv")
+general_variables <- readxl::read_xlsx("/Users/william/Documents/GitHub/FSA_20191123/Data/Q1_Allergies/8574_food_and_you_wave_5_variable_listing.xlsx")
+```
+
+```{r echo=FALSE}
+# View(general_variables)
+# View(head(general))
+# View(head(general$Q6_1, n = 50))
+```
+
+### EDA general dataset
+```{r echo=FALSE}
+# plot_bar(general$age_dv)
+bar1 <- general %>%
+  filter(!is.na(age_dv)  & !is.na(AdReac) ) %>%
+  ggplot()+
+  aes(x = age_dv, fill = AdReac)+
+  geom_bar(color = "Black")+
+  scale_fill_manual(values=cbPalette)+
+  theme_bw()+
+  coord_flip()+
+  xlab("Subjects ages")+
+  ylab("Count")+
+  ggtitle("Subject repartition per age")
+
+bar2 <- general %>%
+  filter(!is.na(RespSex) & !is.na(AdReac) ) %>%
+  ggplot()+
+  aes(x = RespSex, fill = AdReac)+
+  geom_bar(color = "Black")+
+  scale_fill_manual(values=cbPalette)+
+  theme_bw()+
+  coord_flip()+
+  xlab("Subjects Gender")+
+  ylab("Count")+
+  ggtitle("Subject repartition per gender")
+
+plot_grid(bar1, bar2, ncol=1)
+```
+
+### select feature of interest
+```{r echo=FALSE}
+select_col <- c('RespSex', 'AdReac','AvoidFd','age_dv','Q6_1','ons_lifesat','ons_worthw','ons_happy','ons_anxiety')
+general_selected <- select(general, select_col)
+# plot_missing(general_selected)
+# glimpse(general_selected)
+# plot_bar(general_selected)
+general_selected_complete <- general_selected[complete.cases(general_selected), ]
+# nrow(general_selected)
+# nrow(general_selected_complete)
+# plot_correlation(general_selected_complete)
+# general_selected[, c('AdReac', 'ons_lifesat')]
+```
+
+### plot life satisfaction by adreact status
+Need to express life satisfaction categories as a percentage of subset with adreaction or not  
+
+```{r echo=FALSE}
+# sns.barplot(x='ons_lifesat',y='percent',data=food_and_you_lifesat_group,hue='AdReac')
+
+summary_general_selected <- general_selected %>%
+        filter(!is.na(ons_lifesat) & !is.na(AdReac)) %>%
+        group_by(AdReac, ons_lifesat) %>%
+        summarise(
+                count = n()
+                )
+
+summary_general_selected_Adreac_no <- summary_general_selected %>% 
+        filter(AdReac == 'No') %>% 
+        mutate(
+                AdReac_total = sum(count)
+                )
+
+summary_general_selected_Adreac_yes <- summary_general_selected %>% 
+        filter(AdReac == 'Yes') %>% 
+        mutate(
+                AdReac_total = sum(count)
+                )
+
+# View(summary_general_selected)
+
+summary_general_selected_with_total <- bind_rows(summary_general_selected_Adreac_no, summary_general_selected_Adreac_yes)
+# View(summary_general_selected_with_total)
+
+summary_general_selected_with_total <- summary_general_selected_with_total %>%
+        mutate(
+                ons_lifesat_percent = (count/AdReac_total)*100
+                
+        )
+
+ggplot(summary_general_selected_with_total)+
+        aes(x = ons_lifesat, y = ons_lifesat_percent, fill = AdReac)+
+        geom_col(position = position_dodge(), color = 'Black')+
+        scale_fill_manual(values=cbPalette)+
+        theme_bw()+
+        xlab("Measure of Life Satisfaction")+
+        ylab("Percentage of total subject")+
+        ggtitle("Life Satisfaction according to previous Adverse Reaction")
+```
+
+### Measure of General Health according to previous adverse reaction
+
+```{r echo=FALSE}
+# sns.barplot(x='Q6_1',y='percent',data=food_and_you_health_group,hue='AdReac')
+# plt.xlabel("General health")
+# plt.ylabel("Percentage of people with a hypersensitivity")
+
+summary_general_selected <- general_selected %>%
+        filter(!is.na(Q6_1) & !is.na(AdReac)) %>%
+        group_by(AdReac, Q6_1) %>%
+        summarise(
+                count = n()
+                )
+
+summary_general_selected_Adreac_no <- summary_general_selected %>% 
+        filter(AdReac == 'No') %>% 
+        mutate(
+                AdReac_total = sum(count)
+                )
+
+summary_general_selected_Adreac_yes <- summary_general_selected %>% 
+        filter(AdReac == 'Yes') %>% 
+        mutate(
+                AdReac_total = sum(count)
+                )
+
+summary_general_selected_with_total <- bind_rows(summary_general_selected_Adreac_no, summary_general_selected_Adreac_yes)
+
+summary_general_selected_with_total <- summary_general_selected_with_total %>%
+        mutate(
+                General_Health_percent = (count/AdReac_total)*100
+                
+        )
+
+ggplot(summary_general_selected_with_total)+
+        aes(x = Q6_1, y = General_Health_percent, fill = AdReac)+
+        geom_col(position = position_dodge(), color = 'Black')+
+        scale_fill_manual(values=cbPalette)+
+        theme_bw()+
+        xlab("Measure of General Health")+
+        ylab("Percentage of total subject")+
+        ggtitle("General Health according to previous Adverse Reaction")
+```
+
+```{r echo=FALSE}
+summary_general_selected <- general_selected %>%
+        filter(!is.na(ons_happy) & !is.na(AdReac)) %>%
+        group_by(AdReac, ons_happy) %>%
+        summarise(
+                count = n()
+                )
+
+summary_general_selected_Adreac_no <- summary_general_selected %>% 
+        filter(AdReac == 'No') %>% 
+        mutate(
+                AdReac_total = sum(count)
+                )
+
+summary_general_selected_Adreac_yes <- summary_general_selected %>% 
+        filter(AdReac == 'Yes') %>% 
+        mutate(
+                AdReac_total = sum(count)
+                )
+
+summary_general_selected_with_total <- bind_rows(summary_general_selected_Adreac_no, summary_general_selected_Adreac_yes)
+
+
+summary_general_selected_with_total <- summary_general_selected_with_total %>%
+        mutate(
+                ons_happy_percent = (count/AdReac_total)*100
+                
+        )
+
+ggplot(summary_general_selected_with_total)+
+        aes(x = ons_happy, y = ons_happy_percent, fill = AdReac)+
+        geom_col(position = position_dodge(), color = 'Black')+
+        scale_fill_manual(values=cbPalette)+
+        theme_bw()+
+        xlab("Measure of Happiness")+
+        ylab("Percentage of total subject")+
+        ggtitle("Happiness according to previous Adverse Reaction")
+```
+
+### Dummy coding for correlation study
+See https://cran.r-project.org/web/packages/fastDummies/vignettes/making-dummy-variables.html  
+```{r echo=FALSE}
+# knitr::kable(head(general_selected))
+```
+
+
+```{r echo=FALSE}
+# install.packages('fastDummies')
+library(fastDummies)
+general_selected <- general_selected[complete.cases(general_selected), ]
+results <- fastDummies::dummy_cols(general_selected)
+# knitr::kable(head(results))
+# View(head(results))
+```
+
+Correlation plot
+```{r echo=FALSE, message=FALSE}
+library(GGally)
+ggcorr(results, palette = "RdBu")
+```
+
+```{r echo=FALSE}
+library(ggcorrplot)
+df <- results
+# glimpse(df)
+df <- df %>% select(-c(1:9))
+# corr <- cor(df)
+# ggcorrplot(corr)
+# ggcorrplot(corr, method = "circle")
+# ggcorrplot(corr, type = "lower")
+```
+
+
+## B Young population Survey
+Young population food disorder and general health and wellbeing related assesment questions.
+
+```{r message=FALSE}
+young <- read_csv("/Users/william/Documents/GitHub/FSA_20191123/Data/Q1_Allergies/young-people-and-food-allergies-intolerances-2018.csv")
+```
+
+```{r include=FALSE}
+# glimpse(young)
+# head(young)
+# View(young)
+# View(head(young, n = 10))
+```
+
+Since the survey does not include a general health and weelbeing assessment questions a score was determined in order to compare the young and general population survey. The score is a subjective estimation wich could be improved but comparison between young and general population will remain difficult in the abscence of standardize health and wellbeing questions between groups.  
+
+```{r echo=FALSE}
+# Convert health answers to number
+# if row not empty recode to 1
+health <- young %>% select(5:9, 32, 33, 34)
+
+colnames(health)[1] <- "allergy"
+colnames(health)[2] <- "intolerance"
+colnames(health)[3] <- "coeliac"
+colnames(health)[4] <- "gluten_sensitvity"
+colnames(health)[5] <- "other"
+colnames(health)[6] <- "h1"
+colnames(health)[7] <- "h2"
+colnames(health)[8] <- "h3"
+
+health <- health %>%
+        mutate(
+              # If there is a values in the column subject as a food disorder so we attribute a score of 0. If there is no value the subject does not have
+              # a condition and we attribute a score of 1.
+              # Therefore the lesser food disorder are present the higher the health score
+              allergy = as.numeric( ifelse( is.na(allergy), 1, 0) ),
+              intolerance = as.numeric( ifelse( is.na(intolerance), 1, 0) ),
+              coeliac = as.numeric( ifelse( is.na(coeliac), 1, 0) ),
+              gluten_sensitvity = as.numeric( ifelse( is.na(gluten_sensitvity), 1, 0) ),
+              other = as.numeric( ifelse( is.na(other), 1, 0) ),
+              h1 = as.numeric( ifelse( is.na(h1), 0.25, 0) ),
+              h2 = as.numeric( ifelse( is.na(h2), 0.25, 0) ),
+              h3 = as.numeric( ifelse( is.na(h3), 0.25, 0) )
+        )
+
+health <- health %>% 
+        mutate(
+                health_score = allergy + intolerance + coeliac + gluten_sensitvity + other + h1 + h2 + h3
+        )
+
+health <- health %>%
+        mutate(
+              allergy = ifelse( allergy == 1, 'no', 'yes'),
+              intolerance = ifelse( intolerance == 1, 'no', 'yes'),
+              coeliac = ifelse( coeliac == 1, 'no', 'yes'),
+              gluten_sensitvity = ifelse( gluten_sensitvity == 1, 'no', 'yes'),
+              other = ifelse( other == 1, 'no', 'yes'),
+              allergy = as.factor(allergy),
+              intolerance = as.factor(intolerance),
+              coeliac  = as.factor(coeliac ),
+              gluten_sensitvity  = as.factor(gluten_sensitvity),
+              other = as.factor( other)
+        )
+        
+# View(health)
+```
+
+```{r echo=FALSE}
+wellbeing <- young %>% select(19:29, 31, 33, 35:40)
+# View(wellbeing)
+
+for (col in c(1:19)){
+        colnames(wellbeing)[col] <- paste0("w",col)
+}
+
+# View(wellbeing)
+
+# This should and could be done more more efficiently with a for loop
+wellbeing <- wellbeing %>%
+        mutate(
+              # If there is a values in the column subject as a food disorder so we attribute a score of 0. If there is no value the subject does not have
+              # a condition and we attribute a score of 0.25.
+              # Therefore the lesser food disorder are present the higher the health score
+                w1 = as.numeric( ifelse( is.na(w1), 0.25, 0) ),
+                w2 = as.numeric( ifelse( is.na(w2), 0.25, 0) ),
+                w3 = as.numeric( ifelse( is.na(w3), 0.25, 0) ),
+                w4 = as.numeric( ifelse( is.na(w4), 0.25, 0) ),
+                w5 = as.numeric( ifelse( is.na(w5), 0.25, 0) ),
+                w6 = as.numeric( ifelse( is.na(w6), 0.25, 0) ),
+                w7 = as.numeric( ifelse( is.na(w7), 0.25, 0) ),
+                w8 = as.numeric( ifelse( is.na(w8), 0.25, 0) ),
+                w9 = as.numeric( ifelse( is.na(w9), 0.25, 0) ),
+                w10 = as.numeric( ifelse( is.na(w10), 0.25, 0) ),
+                w11 = as.numeric( ifelse( is.na(w11), 0.25, 0) ),
+                w12 = as.numeric( ifelse( is.na(w12), 0.25, 0) ),
+                w13 = as.numeric( ifelse( is.na(w13), 0.25, 0) ),
+                w14 = as.numeric( ifelse( is.na(w14), 0.25, 0) ),
+                w15 = as.numeric( ifelse( is.na(w15), 0.25, 0) ),
+                w16 = as.numeric( ifelse( is.na(w16), 0.25, 0) ),
+                w17 = as.numeric( ifelse( is.na(w17), 0.25, 0) ),
+                w18 = as.numeric( ifelse( is.na(w18), 0.25, 0) ),
+                w19 = as.numeric( ifelse( is.na(w19), 0.25, 0) )
+        )
+
+wellbeing <- wellbeing %>%
+        mutate(
+                wellbeing_score = w1 + w2 + w3 + w4 + w5 + w6 + w7 + w8 + w9 + w10 + w11 + w12 + w13 + w14 + w15 + w16 + w17 + w18 + w19
+        )
+
+# View(wellbeing)
+```
+
+```{r}
+age <- young %>% select(3)
+health_wellbeing <- bind_cols(age, health, wellbeing)
+colnames(health_wellbeing)[1] <- "age"
+health_wellbeing$age <- as.factor(health_wellbeing$age)
+``` 
+
+# II Visualization
+## A General popualtion survey
+
+## B Young population survey
+The goal of this survey is to gain more insigth into the young population in particular.  
+```{r include=FALSE}
+# Delete intermediate table that are no longer needed
+rm(health, wellbeing)
+```
+
+### 1 Health and Weelbeing scores by age
+```{r echo=FALSE}
+bar1 <- ggplot(health_wellbeing)+
+        aes(x = age, fill = age)+
+        geom_bar(color = 'Black')+
+        scale_fill_manual(values=cbPalette)+
+        theme_bw()+
+        coord_flip()+
+        xlab("")+
+        ggtitle("Age repartition in the young population survey")
+
+plot(bar1)
+```
+
+
+```{r echo=FALSE}
+# histogram of health and weelbeing score by age
+hist1 <- ggplot(health_wellbeing)+
+        aes(x = health_score, fill = age)+
+        geom_histogram(binwidth = 1)+
+        scale_fill_manual(values=cbPalette)+
+        theme_bw()+
+        xlab("Count")+
+        ylab("Health Score") +
+        ggtitle("Health Score by age")
+
+hist2 <- ggplot(health_wellbeing)+
+        aes(x = wellbeing_score, fill = age)+
+        geom_histogram(binwidth = 0.25)+
+        scale_fill_manual(values=cbPalette)+
+        theme_bw()+
+        xlab("Count")+
+        ylab("Wellbeing Score") +
+        ggtitle("Wellbeing Score by age")
+
+# plot(hist1)
+# plot(hist2)
+plot_grid(hist1, hist2, ncol=1)
+```
+
+### 2  Health score by food disorder status
+```{r echo=FALSE}
+# # 2 methods to displays bar graph of the mean
+
+#  ggplot(health_wellbeing)+
+#         aes(x = allergy, y = health_score, fill = allergy)+
+#         stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+#         scale_fill_manual(values=cbPalette)+
+#         scale_x_discrete(limits=c("yes", "no"))+
+#         theme_bw()+
+#         coord_flip()+
+#         theme(legend.position="none")+
+#         xlab("")+
+#         ylab("Health Score")+
+#         ggtitle("Allergy")
+# 
+# health_wellbeing %>%
+#         dplyr::group_by(allergy) %>%
+#         dplyr::summarise(mean_health_score = mean(health_score)) %>%
+#         ggplot()+
+#         aes(x = allergy, y = mean_health_score, fill = allergy)+
+#         geom_col(color = "Black")+
+#         scale_fill_manual(values=cbPalette)+
+#         scale_x_discrete(limits=c("yes", "no"))+
+#         theme_bw()+
+#         coord_flip()+
+#         theme(legend.position="none")+
+#         xlab("")+
+#         ylab("Health Score")+
+#         ggtitle("Allergy")
+```
+
+```{r echo=FALSE}
+# Health Score based on food disorders
+bar1 <- ggplot(health_wellbeing)+
+        aes(x = allergy, y = health_score, fill = allergy)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Health Score")+
+        ggtitle("Allergy")
+
+# alternative code for the same graph
+# bar1 <- health_wellbeing %>%
+#         dplyr::group_by(allergy) %>%
+#         dplyr::summarise(mean_health_score = mean(health_score)) %>%
+#           ggplot()+
+#           aes(x = allergy, y = mean_health_score, fill = allergy)+
+#           geom_col(color = "Black")+
+#           scale_fill_manual(values=cbPalette)+
+#           scale_x_discrete(limits=c("yes", "no"))+
+#           theme_bw()+
+#           coord_flip()+
+#           theme(legend.position="none")+
+#           xlab("")+
+#           ylab("Health Score")+
+#           ggtitle("Allergy")
+
+bar2 <- ggplot(health_wellbeing)+
+        aes(x = intolerance, y = health_score, fill = intolerance)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Health Score")+
+        ggtitle("Food Intolerance")
+
+bar3 <- ggplot(health_wellbeing)+
+        aes(x = coeliac, y = health_score, fill = coeliac)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Health Score")+
+        ggtitle("Coeliac")
+
+bar4 <- ggplot(health_wellbeing)+
+        aes(x = gluten_sensitvity, y = health_score, fill = gluten_sensitvity)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Health Score")+
+        ggtitle("Gluten Intolerance")
+
+bar5 <- ggplot(health_wellbeing)+
+        aes(x = other, y = health_score, fill = other)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Health Score")+
+        ggtitle("Other Food Disorders")
+
+plot_grid(
+        bar1,
+        bar2,
+        bar3,
+        bar4,
+        bar5,
+        ncol=2
+)
+```
+
+### 3 Wellbeing score by food disorder status
+```{r echo=FALSE}
+# Weelbeing Score based on food disorders
+bar1 <- ggplot(health_wellbeing)+
+        aes(x = allergy, y = wellbeing_score, fill = allergy)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Wellbeing Score")+
+        ggtitle("Allergy")
+
+bar2 <- ggplot(health_wellbeing)+
+        aes(x = intolerance, y = wellbeing_score, fill = intolerance)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Wellbeing Score")+
+        ggtitle("Food Intolerance")
+
+bar3 <- ggplot(health_wellbeing)+
+        aes(x = coeliac, y = wellbeing_score, fill = coeliac)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Wellbeing Score")+
+        ggtitle("Coeliac")
+
+bar4 <- ggplot(health_wellbeing)+
+        aes(x = gluten_sensitvity, y = wellbeing_score, fill = gluten_sensitvity)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Wellbeing Score")+
+        ggtitle("Gluten Intolerance")
+
+bar5 <- ggplot(health_wellbeing)+
+        aes(x = other, y = wellbeing_score, fill = other)+
+        stat_summary(geom = "bar", fun.y = mean, position = "dodge", color = "Black") +
+        scale_fill_manual(values=cbPalette)+
+        scale_x_discrete(limits=c("yes", "no"))+
+        theme_bw()+
+        coord_flip()+
+        theme(legend.position="none")+
+        xlab("")+
+        ylab("Wellbeing Score")+
+        ggtitle("Other Food Disorders")
+
+plot_grid(
+        bar1,
+        bar2,
+        bar3,
+        bar4,
+        bar5,
+        ncol=2,
+        align = "h"
+)
+```
+
+### 4 Correlation between food disorder and Health Weelbeing score
+```{r echo=FALSE}
+sca1 <- ggplot(health_wellbeing)+
+        aes(x = health_score, y = wellbeing_score, color = allergy)+
+        geom_jitter(alpha = 0.4)+
+        scale_colour_manual(values=cbPalette)+
+        theme_bw()
+
+sca2 <- ggplot(health_wellbeing)+
+        aes(x = health_score, y = wellbeing_score, color = intolerance)+
+        geom_jitter(alpha = 0.4)+
+        scale_colour_manual(values=cbPalette)+
+        theme_bw()
+
+sca3 <- ggplot(health_wellbeing)+
+        aes(x = health_score, y = wellbeing_score, color = coeliac)+
+        geom_jitter(alpha = 0.4)+
+        scale_colour_manual(values=cbPalette)+
+        theme_bw()
+
+sca4 <- ggplot(health_wellbeing)+
+        aes(x = health_score, y = wellbeing_score, color = gluten_sensitvity)+
+        geom_jitter(alpha = 0.4)+
+        scale_colour_manual(values=cbPalette)+
+        theme_bw()
+
+sca5 <- ggplot(health_wellbeing)+
+        aes(x = health_score, y = wellbeing_score, color = other)+
+        geom_jitter(alpha = 0.4)+
+        scale_colour_manual(values=cbPalette)+
+        theme_bw()
+        
+plot(sca1)
+plot(sca2)
+plot(sca3)
+plot(sca4)
+plot(sca5)
+```
+
+
+# III Conclusions
+1. Surverys are best designed with the hypothesis in mind. The young population survey didn't have general health and wellbeing assesement preventing clear exploration of the hypothesis
+2. No clear effect of food disorder on general gealth and wellbeing in the young population
+
+# References
+* [Analyzing Thanksgiving dinners in R](https://www.youtube.com/watch?v=rxJZT0duwfU)
+* [Analyzing Survey Data in R](https://www.datacamp.com/courses/analyzing-survey-data-in-r)
+* [colorblind-friendly-palette](http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette)
+* [Recode variable](http://www.cookbook-r.com/Manipulating_data/Recoding_data/)
+* [Using stat_ instead of dplyr to summarize groups in a ggplot?](https://community.rstudio.com/t/using-stat-instead-of-dplyr-to-summarize-groups-in-a-ggplot/13916)
