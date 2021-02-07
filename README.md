@@ -28,17 +28,35 @@ Using these selected variables, I built a logistic regression model to evaluate 
 The users of the A14 road can report incidents using an application. The goal of this challenge proposed by the organizers of the Project: Hack5 hackathon is to perform sentiment analysis to obtain new insights from the user's comments and improve the user experiences on the application.
 The sentiment analysis was performed using the TextBlog library in python. Based on the sentiment analysis, an incident prediction tool was built using a Random Forest algorithm. The model can predict the type of incident with an accuracy of 83% and could be used to add a questionnaire auto-completion functionality in the application. 
 
+### [NYC Airbnb: house price prediction](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/NYC_Airbnb)
+For this project, I explored a dataset of Airbnb properties in NYC. I used Python and the Seaborn library to visualize the data. The examination of the dataset highlights the large variability of the price distribution and the expected impact of the neighborhood and room type on price. To model the property price based on the independent variables, I used the scikit-learn library to implement multiple linear regression and random forest regressors. Given the limited number of independent variables on the dataset, the model accuracy was limited, especially for the higher-priced properties. A more elaborated model could be built using neural network and natural language processing analysis of the properties reviews to improve the model efficiency.
+
+### [Melbourne Housing Market: Multiple Linear Regression](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Melbourne_Housing_Market)
+For this project, as for the NYC Airbnb analysis, I used Python and the scikit-learn library to predict the price of houses based on the independent variables. Because there were more variables in this dataset and because several factors were linearly correlated to the price, a multiple linear regression model performed well.
+
+### [Ph.D. Stipends by research topic and universities](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/PhD_Stipends_by%20research_topic_and_universities)
+
+This project aims to clean up and analyze the data set of Ph. D. students salaries by universities and departments over time.
+I performed the analysis with  R and the tidyverse libraries.
+For the data cleaning, I excluded the variables containing a majority of missing values, combined similar departments, and separated the universities per location.
+The significant highlights from the analysis are:  
+
+* The majority of responders are from the USA, data collection from non-USA universities started in 2013
+* The students stipend and living wages are higher in the USA.
+* The stipends do not increase with experience
+* The Ph.D. stipends had a significant decrease around the 2008 crisis.
+* The Ph.D. stipends are not equal between departments.
+
 ### [Food Safety Agency Hackathon: young population survey analysis](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/FSA_Hackathon)  
 The Food Standards Agency (FSA) is an independent government department working across England, Wales and Northern Ireland to protect public health and consumers’ wider interest in food. The FSA is responsible for making sure food is safe and what it says it is.  
 On Sat, November 23, 2019 FSA and Pivigo organized a [Hackathon](https://www.eventbrite.com/e/food-standards-agency-data-science-hackathon
 
 -tickets-77135950705?utm_source=eventbrite&utm_medium=email&utm_campaign=reminder_attendees_48hour_email&utm_term=eventname&ref=eemaileventremind#) to analyse food survey questionaires.  
 
-### [NYC Airbnb: house price prediction](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/NYC_Airbnb)
-For this project, I explored a dataset of Airbnb properties in NYC. I used Python and the Seaborn library to visualize the data. The examination of the dataset highlights the large variability of the price distribution and the expected impact of the neighborhood and room type on price. To model the property price based on the independent variables, I used the scikit-learn library to implement multiple linear regression and random forest regressors. Given the limited number of independent variables on the dataset, the model accuracy was limited, especially for the higher-priced properties. A more elaborated model could be built using neural network and natural language processing analysis of the properties reviews to improve the model efficiency.
+### [Visualizing Inequalities in Life Expectancy](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Visualizing_Inequalities_in_Life_Expectancy)
 
-### [Melbourne Housing Market: Multiple Linear Regression](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Melbourne_Housing_Market)
-For this project, as for the NYC Airbnb analysis, I used Python and the scikit-learn library to predict the price of houses based on the independent variables. Because there were more variables in this dataset and because several factors were linearly correlated to the price, a multiple linear regression model performed well.
+This simple project proposed by DataCamp aims to visualize the inequalities in life expectancy among countries using R.
+I performed the data cleaning and wrangling with the Dplyr package and the visualization with the Ggplot2 package.
 
 ***
 ## Computational Biology projects
