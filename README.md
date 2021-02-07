@@ -1,5 +1,3 @@
-# Data_Science_portfolio_dev: A private repository to update and improve my data science portfolio
-
 # Data Science portfolio
 A collection of personal data science and computational biology and projects.
 
@@ -44,9 +42,6 @@ For this project, as for the NYC Airbnb analysis, I used Python and the scikit-l
 ## Computational Biology projects
 ### [B cells repertoire analysis]()
 Systemic lupus erythematosus (SLE) is an autoimmune disease in which the B lymphocytes produce pathogenic auto-antibodies targeting healthy tissues. The exact causes of the diseases are unknown but involves a combination of genetic and environmental factors. In this project I used the AntibodyMap database to extract the heavy chains of healthy subject and SLE Patients. My interest was particularly to compare the IgM heavy chains repertoire between healthy control and SLE patients. I used the Immcantation pipeline developed by Steven Kleinstein’s team and my owns custom scripts to compare the B cell repertoire of SLE patient to healthy controls.
-
-### [10x Genomics: identify cells subsets]()
-10X Genomics: identify cells subsets barcodes
 
 ### [Ubuntu Server]()
 The steps used to create the Ubuntu 18.04 server used for B cells Receptor clonal analysis.
