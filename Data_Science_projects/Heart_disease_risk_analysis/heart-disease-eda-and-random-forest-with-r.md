@@ -1,6 +1,5 @@
 Heart Disease: EDA and Random forest with R
 ================
-William Guesdon
 Compiled: February 07, 2021
 
 ## Introduction
@@ -988,7 +987,7 @@ According to parameters the model should be at least 88% accurate.
 cat("Model accuracy", round(accuracy, digits = 2)*100, "%")  
 ```
 
-    ## Model accuracy 87 %
+    ## Model accuracy 86 %
 
 Print the desicion tree.
 
@@ -1031,7 +1030,7 @@ According to parameters the model should be at least 88% accurate.
 cat("Model accuracy", round(accuracy, digits = 2)*100, "%")  
 ```
 
-    ## Model accuracy 88 %
+    ## Model accuracy 89 %
 
 Print the desicion tree.
 
@@ -1050,7 +1049,7 @@ fancyRpartPlot(mod_class, , caption = NULL)
 ### C Prediction on selected column with random forest
 
 ``` r
-set.seed(103)
+set.seed(123)
 train <- sample(nrow(df_select), 0.7*nrow(df_select), replace = FALSE)
 TrainSet <- df_select[train,]
 ValidSet <- df_select[-train,]
@@ -1058,38 +1057,38 @@ summary(TrainSet)
 ```
 
     ##  target       age             sex              chol        restecg      
-    ##  0: 93   Min.   :29.00   Min.   :0.0000   Min.   :126   Min.   :0.0000  
-    ##  1:114   1st Qu.:46.50   1st Qu.:0.0000   1st Qu.:211   1st Qu.:0.0000  
-    ##          Median :55.00   Median :1.0000   Median :239   Median :1.0000  
-    ##          Mean   :54.03   Mean   :0.6908   Mean   :246   Mean   :0.5411  
-    ##          3rd Qu.:60.00   3rd Qu.:1.0000   3rd Qu.:277   3rd Qu.:1.0000  
+    ##  0: 91   Min.   :29.00   Min.   :0.0000   Min.   :126   Min.   :0.0000  
+    ##  1:116   1st Qu.:48.00   1st Qu.:0.0000   1st Qu.:208   1st Qu.:0.0000  
+    ##          Median :56.00   Median :1.0000   Median :240   Median :0.0000  
+    ##          Mean   :55.02   Mean   :0.6763   Mean   :244   Mean   :0.5024  
+    ##          3rd Qu.:62.00   3rd Qu.:1.0000   3rd Qu.:272   3rd Qu.:1.0000  
     ##          Max.   :77.00   Max.   :1.0000   Max.   :564   Max.   :2.0000  
-    ##        cp            thalach          slope      
-    ##  Min.   :0.0000   Min.   : 88.0   Min.   :0.000  
-    ##  1st Qu.:0.0000   1st Qu.:132.0   1st Qu.:1.000  
-    ##  Median :1.0000   Median :152.0   Median :1.000  
-    ##  Mean   :0.9903   Mean   :149.3   Mean   :1.377  
-    ##  3rd Qu.:2.0000   3rd Qu.:167.5   3rd Qu.:2.000  
-    ##  Max.   :3.0000   Max.   :202.0   Max.   :2.000
+    ##        cp           thalach          slope      
+    ##  Min.   :0.000   Min.   : 95.0   Min.   :0.000  
+    ##  1st Qu.:0.000   1st Qu.:136.0   1st Qu.:1.000  
+    ##  Median :1.000   Median :153.0   Median :1.000  
+    ##  Mean   :1.014   Mean   :150.2   Mean   :1.386  
+    ##  3rd Qu.:2.000   3rd Qu.:165.0   3rd Qu.:2.000  
+    ##  Max.   :3.000   Max.   :202.0   Max.   :2.000
 
 ``` r
 summary(ValidSet)
 ```
 
-    ##  target      age             sex              chol          restecg      
-    ##  0:43   Min.   :34.00   Min.   :0.0000   Min.   :131.0   Min.   :0.0000  
-    ##  1:46   1st Qu.:50.00   1st Qu.:0.0000   1st Qu.:213.0   1st Qu.:0.0000  
-    ##         Median :57.00   Median :1.0000   Median :245.0   Median :0.0000  
-    ##         Mean   :55.67   Mean   :0.6517   Mean   :249.9   Mean   :0.4831  
-    ##         3rd Qu.:62.00   3rd Qu.:1.0000   3rd Qu.:274.0   3rd Qu.:1.0000  
-    ##         Max.   :74.00   Max.   :1.0000   Max.   :417.0   Max.   :1.0000  
+    ##  target      age             sex              chol          restecg     
+    ##  0:45   Min.   :35.00   Min.   :0.0000   Min.   :175.0   Min.   :0.000  
+    ##  1:44   1st Qu.:47.00   1st Qu.:0.0000   1st Qu.:223.0   1st Qu.:0.000  
+    ##         Median :54.00   Median :1.0000   Median :247.0   Median :1.000  
+    ##         Mean   :53.37   Mean   :0.6854   Mean   :254.5   Mean   :0.573  
+    ##         3rd Qu.:59.00   3rd Qu.:1.0000   3rd Qu.:283.0   3rd Qu.:1.000  
+    ##         Max.   :70.00   Max.   :1.0000   Max.   :409.0   Max.   :2.000  
     ##        cp            thalach          slope      
     ##  Min.   :0.0000   Min.   : 71.0   Min.   :0.000  
-    ##  1st Qu.:0.0000   1st Qu.:142.0   1st Qu.:1.000  
-    ##  Median :0.0000   Median :154.0   Median :2.000  
-    ##  Mean   :0.8876   Mean   :150.2   Mean   :1.438  
-    ##  3rd Qu.:2.0000   3rd Qu.:163.0   3rd Qu.:2.000  
-    ##  Max.   :3.0000   Max.   :192.0   Max.   :2.000
+    ##  1st Qu.:0.0000   1st Qu.:132.0   1st Qu.:1.000  
+    ##  Median :0.0000   Median :152.0   Median :1.000  
+    ##  Mean   :0.8315   Mean   :148.2   Mean   :1.416  
+    ##  3rd Qu.:2.0000   3rd Qu.:168.0   3rd Qu.:2.000  
+    ##  Max.   :3.0000   Max.   :190.0   Max.   :2.000
 
 ``` r
 # Create a Random Forest model with default parameters
@@ -1104,11 +1103,11 @@ model1
     ##                      Number of trees: 1000
     ## No. of variables tried at each split: 1
     ## 
-    ##         OOB estimate of  error rate: 26.09%
+    ##         OOB estimate of  error rate: 28.02%
     ## Confusion matrix:
     ##    0  1 class.error
-    ## 0 66 27   0.2903226
-    ## 1 27 87   0.2368421
+    ## 0 58 33   0.3626374
+    ## 1 25 91   0.2155172
 
 ``` r
 # Predicting on train set
@@ -1119,8 +1118,8 @@ table(predTrain, TrainSet$target)
 
     ##          
     ## predTrain   0   1
-    ##         0  84  10
-    ##         1   9 104
+    ##         0  80   9
+    ##         1  11 107
 
 ``` r
 # Predicting on Validation set
@@ -1129,7 +1128,7 @@ predValid <- predict(model1, ValidSet, type = "class")
 mean(predValid == ValidSet$target)                    
 ```
 
-    ## [1] 0.8426966
+    ## [1] 0.7977528
 
 ``` r
 table(predValid,ValidSet$target)
@@ -1137,22 +1136,22 @@ table(predValid,ValidSet$target)
 
     ##          
     ## predValid  0  1
-    ##         0 34  5
-    ##         1  9 41
+    ##         0 36  9
+    ##         1  9 35
 
 ``` r
 # To check important variables
 importance(model1)        
 ```
 
-    ##                  0          1 MeanDecreaseAccuracy MeanDecreaseGini
-    ## age      8.5635858  8.1274728           11.2387546        10.754847
-    ## sex     20.7787044 16.4186188           22.8891913         5.828656
-    ## chol    -0.6401581  0.1514547           -0.3373315         9.016257
-    ## restecg  3.2825129 -0.2000304            2.0950618         2.718995
-    ## cp      21.0887042 22.3577590           25.9377637        11.363132
-    ## thalach 13.9497972 12.7792174           18.4671834        13.544435
-    ## slope   16.3291696 14.9037870           20.2973077         7.420501
+    ##                 0            1 MeanDecreaseAccuracy MeanDecreaseGini
+    ## age      3.456978 11.118814352            10.045334        10.174882
+    ## sex     17.986950 18.447097660            22.356657         6.212641
+    ## chol    -3.667658 -0.005187581            -2.378170         9.368247
+    ## restecg  1.926634  3.951377314             4.138125         3.080821
+    ## cp      19.676722 17.420672992            22.537720        10.408636
+    ## thalach 14.987882 12.899451821            18.350082        14.006896
+    ## slope   13.982290  9.048798817            15.232708         6.022085
 
 ``` r
 varImpPlot(model1)  
@@ -1163,72 +1162,65 @@ varImpPlot(model1)
 ### D Use the full dataset for classification with random forest
 
 ``` r
-set.seed(103)
+set.seed(123)
 train <- sample(nrow(df), 0.7*nrow(df_select), replace = FALSE)
 TrainSet <- df[train,]
 ValidSet <- df[-train,]
 summary(TrainSet)
 ```
 
-    ##       age             sex               cp            trestbps    
-    ##  Min.   :29.00   Min.   :0.0000   Min.   :0.0000   Min.   : 94.0  
-    ##  1st Qu.:46.50   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:120.0  
-    ##  Median :55.00   Median :1.0000   Median :1.0000   Median :130.0  
-    ##  Mean   :54.03   Mean   :0.6908   Mean   :0.9903   Mean   :130.6  
-    ##  3rd Qu.:60.00   3rd Qu.:1.0000   3rd Qu.:2.0000   3rd Qu.:140.0  
-    ##  Max.   :77.00   Max.   :1.0000   Max.   :3.0000   Max.   :200.0  
-    ##       chol          fbs            restecg          thalach     
-    ##  Min.   :126   Min.   :0.0000   Min.   :0.0000   Min.   : 88.0  
-    ##  1st Qu.:211   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:132.0  
-    ##  Median :239   Median :0.0000   Median :1.0000   Median :152.0  
-    ##  Mean   :246   Mean   :0.1498   Mean   :0.5411   Mean   :149.3  
-    ##  3rd Qu.:277   3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:167.5  
-    ##  Max.   :564   Max.   :1.0000   Max.   :2.0000   Max.   :202.0  
-    ##      exang           oldpeak          slope             ca        
-    ##  Min.   :0.0000   Min.   :0.000   Min.   :0.000   Min.   :0.0000  
-    ##  1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:1.000   1st Qu.:0.0000  
-    ##  Median :0.0000   Median :1.000   Median :1.000   Median :0.0000  
-    ##  Mean   :0.3237   Mean   :1.146   Mean   :1.377   Mean   :0.7053  
-    ##  3rd Qu.:1.0000   3rd Qu.:1.800   3rd Qu.:2.000   3rd Qu.:1.0000  
-    ##  Max.   :1.0000   Max.   :5.600   Max.   :2.000   Max.   :3.0000  
-    ##       thal       target 
-    ##  Min.   :1.000   0: 93  
-    ##  1st Qu.:2.000   1:114  
-    ##  Median :2.000          
-    ##  Mean   :2.309          
-    ##  3rd Qu.:3.000          
-    ##  Max.   :3.000
+    ##       age             sex               cp           trestbps          chol    
+    ##  Min.   :29.00   Min.   :0.0000   Min.   :0.000   Min.   :100.0   Min.   :126  
+    ##  1st Qu.:48.00   1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:120.0   1st Qu.:208  
+    ##  Median :56.00   Median :1.0000   Median :1.000   Median :130.0   Median :240  
+    ##  Mean   :55.02   Mean   :0.6763   Mean   :1.014   Mean   :131.1   Mean   :244  
+    ##  3rd Qu.:62.00   3rd Qu.:1.0000   3rd Qu.:2.000   3rd Qu.:140.0   3rd Qu.:272  
+    ##  Max.   :77.00   Max.   :1.0000   Max.   :3.000   Max.   :192.0   Max.   :564  
+    ##       fbs            restecg          thalach          exang       
+    ##  Min.   :0.0000   Min.   :0.0000   Min.   : 95.0   Min.   :0.0000  
+    ##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:136.0   1st Qu.:0.0000  
+    ##  Median :0.0000   Median :0.0000   Median :153.0   Median :0.0000  
+    ##  Mean   :0.1643   Mean   :0.5024   Mean   :150.2   Mean   :0.3382  
+    ##  3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:165.0   3rd Qu.:1.0000  
+    ##  Max.   :1.0000   Max.   :2.0000   Max.   :202.0   Max.   :1.0000  
+    ##     oldpeak          slope             ca              thal       target 
+    ##  Min.   :0.000   Min.   :0.000   Min.   :0.0000   Min.   :1.000   0: 91  
+    ##  1st Qu.:0.000   1st Qu.:1.000   1st Qu.:0.0000   1st Qu.:2.000   1:116  
+    ##  Median :0.800   Median :1.000   Median :0.0000   Median :2.000          
+    ##  Mean   :1.055   Mean   :1.386   Mean   :0.6039   Mean   :2.319          
+    ##  3rd Qu.:1.600   3rd Qu.:2.000   3rd Qu.:1.0000   3rd Qu.:3.000          
+    ##  Max.   :6.200   Max.   :2.000   Max.   :3.0000   Max.   :3.000
 
 ``` r
 summary(ValidSet)
 ```
 
-    ##       age             sex               cp            trestbps  
-    ##  Min.   :34.00   Min.   :0.0000   Min.   :0.0000   Min.   : 94  
-    ##  1st Qu.:50.00   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:120  
-    ##  Median :57.00   Median :1.0000   Median :0.0000   Median :132  
-    ##  Mean   :55.67   Mean   :0.6517   Mean   :0.8876   Mean   :134  
-    ##  3rd Qu.:62.00   3rd Qu.:1.0000   3rd Qu.:2.0000   3rd Qu.:145  
-    ##  Max.   :74.00   Max.   :1.0000   Max.   :3.0000   Max.   :180  
-    ##       chol            fbs            restecg          thalach     
-    ##  Min.   :131.0   Min.   :0.0000   Min.   :0.0000   Min.   : 71.0  
-    ##  1st Qu.:213.0   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:142.0  
-    ##  Median :245.0   Median :0.0000   Median :0.0000   Median :154.0  
-    ##  Mean   :249.9   Mean   :0.1348   Mean   :0.4831   Mean   :150.2  
-    ##  3rd Qu.:274.0   3rd Qu.:0.0000   3rd Qu.:1.0000   3rd Qu.:163.0  
-    ##  Max.   :417.0   Max.   :1.0000   Max.   :1.0000   Max.   :192.0  
-    ##      exang           oldpeak           slope             ca       
-    ##  Min.   :0.0000   Min.   :0.0000   Min.   :0.000   Min.   :0.000  
-    ##  1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:1.000   1st Qu.:0.000  
-    ##  Median :0.0000   Median :0.5000   Median :2.000   Median :0.000  
-    ##  Mean   :0.3371   Mean   :0.8573   Mean   :1.438   Mean   :0.618  
-    ##  3rd Qu.:1.0000   3rd Qu.:1.2000   3rd Qu.:2.000   3rd Qu.:1.000  
-    ##  Max.   :1.0000   Max.   :6.2000   Max.   :2.000   Max.   :3.000  
+    ##       age             sex               cp            trestbps    
+    ##  Min.   :35.00   Min.   :0.0000   Min.   :0.0000   Min.   : 94.0  
+    ##  1st Qu.:47.00   1st Qu.:0.0000   1st Qu.:0.0000   1st Qu.:120.0  
+    ##  Median :54.00   Median :1.0000   Median :0.0000   Median :130.0  
+    ##  Mean   :53.37   Mean   :0.6854   Mean   :0.8315   Mean   :132.8  
+    ##  3rd Qu.:59.00   3rd Qu.:1.0000   3rd Qu.:2.0000   3rd Qu.:146.0  
+    ##  Max.   :70.00   Max.   :1.0000   Max.   :3.0000   Max.   :200.0  
+    ##       chol            fbs            restecg         thalach     
+    ##  Min.   :175.0   Min.   :0.0000   Min.   :0.000   Min.   : 71.0  
+    ##  1st Qu.:223.0   1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:132.0  
+    ##  Median :247.0   Median :0.0000   Median :1.000   Median :152.0  
+    ##  Mean   :254.5   Mean   :0.1011   Mean   :0.573   Mean   :148.2  
+    ##  3rd Qu.:283.0   3rd Qu.:0.0000   3rd Qu.:1.000   3rd Qu.:168.0  
+    ##  Max.   :409.0   Max.   :1.0000   Max.   :2.000   Max.   :190.0  
+    ##      exang           oldpeak          slope             ca        
+    ##  Min.   :0.0000   Min.   :0.000   Min.   :0.000   Min.   :0.0000  
+    ##  1st Qu.:0.0000   1st Qu.:0.000   1st Qu.:1.000   1st Qu.:0.0000  
+    ##  Median :0.0000   Median :0.800   Median :1.000   Median :1.0000  
+    ##  Mean   :0.3034   Mean   :1.069   Mean   :1.416   Mean   :0.8539  
+    ##  3rd Qu.:1.0000   3rd Qu.:1.900   3rd Qu.:2.000   3rd Qu.:1.0000  
+    ##  Max.   :1.0000   Max.   :4.400   Max.   :2.000   Max.   :3.0000  
     ##       thal       target
-    ##  Min.   :1.000   0:43  
-    ##  1st Qu.:2.000   1:46  
+    ##  Min.   :1.000   0:45  
+    ##  1st Qu.:2.000   1:44  
     ##  Median :2.000         
-    ##  Mean   :2.371         
+    ##  Mean   :2.348         
     ##  3rd Qu.:3.000         
     ##  Max.   :3.000
 
@@ -1245,11 +1237,11 @@ model2
     ##                      Number of trees: 1000
     ## No. of variables tried at each split: 2
     ## 
-    ##         OOB estimate of  error rate: 19.81%
+    ##         OOB estimate of  error rate: 20.77%
     ## Confusion matrix:
-    ##    0  1 class.error
-    ## 0 71 22   0.2365591
-    ## 1 19 95   0.1666667
+    ##    0   1 class.error
+    ## 0 63  28   0.3076923
+    ## 1 15 101   0.1293103
 
 ``` r
 # Predicting on train set
@@ -1260,8 +1252,8 @@ table(predTrain, TrainSet$target)
 
     ##          
     ## predTrain   0   1
-    ##         0  93   0
-    ##         1   0 114
+    ##         0  91   0
+    ##         1   0 116
 
 ``` r
 # Predicting on Validation set
@@ -1270,7 +1262,7 @@ predValid <- predict(model2, ValidSet, type = "class")
 mean(predValid == ValidSet$target)                    
 ```
 
-    ## [1] 0.8876404
+    ## [1] 0.8764045
 
 ``` r
 table(predValid,ValidSet$target)
@@ -1278,28 +1270,28 @@ table(predValid,ValidSet$target)
 
     ##          
     ## predValid  0  1
-    ##         0 34  1
-    ##         1  9 45
+    ##         0 39  5
+    ##         1  6 39
 
 ``` r
 # To check important variables
 importance(model2)        
 ```
 
-    ##                   0          1 MeanDecreaseAccuracy MeanDecreaseGini
-    ## age       3.5531855  6.9841836           7.26413831         8.399466
-    ## sex       5.4296622 10.6451739          11.20179489         3.769720
-    ## cp       13.1854993  8.8365604          14.94704991         9.342946
-    ## trestbps -0.7248403  2.6564089           1.49917817         7.100646
-    ## chol     -1.4289861 -1.6216622          -2.22440917         7.682719
-    ## fbs       0.1249613  1.5281060           1.23237510         1.435625
-    ## restecg  -0.1085154  0.4856894           0.04541514         2.184212
-    ## thalach   2.2711310  9.6719216           8.58938320        11.784905
-    ## exang     7.4776841  7.2417434          10.31578378         5.023431
-    ## oldpeak  16.7213070 13.5158911          20.58424679        12.044601
-    ## slope     8.5126201  5.2090096           9.46218293         4.917241
-    ## ca       23.4603133 28.5683118          32.68822956        14.574756
-    ## thal     13.2246941 19.8485560          22.23692307         8.882171
+    ##                  0          1 MeanDecreaseAccuracy MeanDecreaseGini
+    ## age       4.050036  6.7463054             7.778196         8.939681
+    ## sex       8.638348 14.3957620            15.929672         4.589083
+    ## cp       15.051396 11.2883097            17.483834         9.059950
+    ## trestbps  1.813027  0.9226925             2.032148         7.050590
+    ## chol     -1.726460 -2.4182808            -2.982013         8.319708
+    ## fbs      -1.802818  4.1916949             2.098540         1.367634
+    ## restecg   1.178421  2.2335381             2.450169         2.609878
+    ## thalach   9.766391 10.4880323            14.128124        12.069991
+    ## exang     9.185204  5.9611054            10.635688         4.988638
+    ## oldpeak  18.583582 18.0805610            24.266457        12.847074
+    ## slope     8.688542  4.0812821             9.073868         4.321699
+    ## ca       22.053674 24.4175996            29.812574        11.204931
+    ## thal     14.724654 16.1138529            19.564541         8.636882
 
 ``` r
 varImpPlot(model2)  
