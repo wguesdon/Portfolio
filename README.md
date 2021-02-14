@@ -15,6 +15,11 @@ William Guesdon, Manchester UK
 ***
 ## Data Science projects
 
+### [Discord Server Messages Analysis](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Discord_Server_Messages_Analysis)
+
+[66DaysOfData](https://www.66daysofdata.com/) is a challenge to learn data science by committing to work at least 5 min every day and share your progress. 
+The goal of this project is to analyse the messages of the 66DaysOfData discord server. The first analysis focuses on the Introduction and Progress channels. 
+
 ### [Predicting Heart Disease Risk with Random Forest](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Heart_disease_risk_analysis)
 Heart disease is the leading cause of death in the United States ([1](https://www.cdc.gov/heartdisease/facts.htm)). To address this significant health issue, the Center for Disease Control (CDC) has a division dedicated to heart disease and stroke prevention ([2](https://www.cdc.gov/dhdsp/programs/spha/index.htm)). The CDC also recently started to use machine learning for prevention and diagnoses, which should be useful in identifying the population at risk ([3](https://www.electronicproducts.com/Programming/Software/The_CDC_uses_machine_learning_and_social_media_to_forecast_flu_outbreaks.aspx)).
 Assisting diagnoses is an exciting and promising application of machine learning ([4](https://www.nature.com/articles/s41467-019-14225-8), [5](https://www.nature.com/articles/s41598-019-56889-8)), but the use of black box models is a potential issue ([6](https://www.thelancet.com/journals/lanres/article/PIIS2213-2600(18)304259/fulltext)). In this analysis, I used a decision tree open model to identify subjects with heart disease. The model achieved 80% accuracy, highlighting the potential of machine leering in assisting and accelerating the diagnosis of heart disease.
