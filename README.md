@@ -41,7 +41,7 @@ For this project, as for the NYC Airbnb analysis, I used Python and the scikit-l
 
 ### [Ph.D. Stipends by research topic and universities](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/PhD_Stipends_by%20research_topic_and_universities)
 
-This project was issue from the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
+This project was proposed by the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
 
 This project aims to clean up and analyze the data set of Ph. D. students salaries by universities and departments over time.
 I performed the analysis with  R and the tidyverse libraries.
@@ -56,7 +56,7 @@ The significant highlights from the analysis are:
 
 ### [Analyze BrainPoste Blog traffic](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Blog_Google_Analytics)
 
-This project was proposed by from the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
+This project was proposed by the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
 
 Kasey Hemington runs BrainPost with a fellow PhD friend, Leigh Christopher as a way to keep in touch with her scientific roots while working as a data scientist!
 
