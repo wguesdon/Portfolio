@@ -54,7 +54,7 @@ The significant highlights from the analysis are:
 * The Ph.D. stipends had a significant decrease around the 2008 crisis.
 * The Ph.D. stipends are not equal between departments.
 
-# [Analyze BrainPoste Blog traffic](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Blog_Google_Analytics)
+### [Analyze BrainPoste Blog traffic](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Blog_Google_Analytics)
 
 This project was proposed by from the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
 
