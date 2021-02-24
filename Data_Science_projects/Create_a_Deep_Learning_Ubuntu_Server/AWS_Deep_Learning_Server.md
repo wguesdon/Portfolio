@@ -1,4 +1,5 @@
-# Create a Deep Learning Ubuntu Server on AWS cloud
+Create a Deep Learning Ubuntu Server on AWS cloud
+================
 
 ## References
 
