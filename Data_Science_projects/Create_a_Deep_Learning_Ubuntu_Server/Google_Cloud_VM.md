@@ -110,7 +110,7 @@ api.competition_download_file('titanic','gender_submission.csv')
 ```
 
 
-## 4. Install Tmux to run operation on server after ssh disconection
+# 4. Install Tmux to run operation on server after ssh disconection
 
 ``` bash
 sudo apt-get update
@@ -123,7 +123,7 @@ sudo apt-get install tmux
 sudo apt install git
 ```
 
-# 5. Configure the ftp server
+# 6. Configure the ftp server
 
 see https://zatackcoder.com/how-to-setup-ftp-server-vsftpd-on-google-cloud-compute-engine/
 
