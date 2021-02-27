@@ -26,6 +26,7 @@ ssh root@206.189.19.132 # Connect to the root account
 
 # Create a new users with sudo privilege
 sudo adduser will
+usermod -aG sudo will
 
 # Disconnet from the root account and reconect to the new user
 su - will
@@ -92,6 +93,7 @@ sudo apt update
 apt-cache policy docker-ce
 sudo apt install docker-ce
 sudo systemctl status docker
+# exit with control + c
 ```
 
 ## 8\. Install Tmux to run operation on server after ssh disconection
