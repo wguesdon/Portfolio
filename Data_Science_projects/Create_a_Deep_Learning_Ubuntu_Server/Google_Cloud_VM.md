@@ -121,6 +121,20 @@ sudo apt-get install tmux
 
 ``` bash
 sudo apt install git
+
+su - will
+# See https://www.geeksforgeeks.org/how-to-install-configure-and-use-git-on-ubuntu/
+# See https://www.digitalocean.com/community/tutorials/how-to-install-git-on-ubuntu-20-04
+
+git config --global user.name "wguesdon"
+git config --global user.email "wguesdon@gmail.com"
+git config --list
+
+# https://medium.com/@sangeethkumar.tvm.kpm/how-to-connect-your-github-repository-using-ssh-key-fcfbf0d62eb6
+ssh-keygen -t rsa -b 4096 -C "wguesdon@gmail.com"
+cat ~/.ssh/id_rsa.pub
+
+git clone git@github.com:wguesdon/Data_Science_portfolio.git
 ```
 
 # 6. Configure the ftp server
