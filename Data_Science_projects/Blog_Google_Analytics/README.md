@@ -1,4 +1,4 @@
-# Analyze BrainPoste Blog traffic
+# Analyze BrainPost Blog traffic
 
 This project was proposed by from the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
 
