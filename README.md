@@ -29,7 +29,7 @@ Heart disease is the leading cause of death in the United States ([1](https://ww
 Assisting diagnoses is an exciting and promising application of machine learning ([4](https://www.nature.com/articles/s41467-019-14225-8), [5](https://www.nature.com/articles/s41598-019-56889-8)), but the use of black box models is a potential issue ([6](https://www.thelancet.com/journals/lanres/article/PIIS2213-2600(18)304259/fulltext)). In this analysis, I used a decision tree open model to identify subjects with heart disease. The model achieved 80% accuracy, highlighting the potential of machine leering in assisting and accelerating the diagnosis of heart disease.
 
 ### [Determine Risks Factors Associated with Strokes](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Determine_Risks_Factors_Associated_with_Strokes)
-The goal of this assignment is to use statistical learning to identify the combination of the features that are more likely to be associated with stroke. For this analysis, I first performed an exploratory data analysis and feature engineering. As often seen in health-related datasets, the proportion of patients with stroke is low, resulting in a severely unbalanced dataset. To compensate for the unbalance, I used the ROSE package to artificially over sample the number of strokes observations.  
+The goal of this project is to use statistical learning to identify the combination of the features that are more likely to be associated with stroke. For this analysis, I first performed an exploratory data analysis and feature engineering. As often seen in health-related datasets, the proportion of patients with stroke is low, resulting in a severely unbalanced dataset. To compensate for the unbalance, I used the ROSE package to artificially over sample the number of strokes observations.  
 I then used a dimension reduction technique adapted to mixed datasets of continuous and categorical variables with the FAMD package. This visualization allowed me to identify the features most likely associated with the risk of developing a stroke.
 Using these selected variables, I built a logistic regression model to evaluate the contribution of each feature to the risk of developing a stroke. The logistic regression model identified the Age, Average Glucose Level, Smoking, Hypertension, and Heart Diseases features as the most likely risk factors of developing a stroke. Age was the principal risk factor in this study.
 
@@ -54,7 +54,7 @@ The significant highlights from the analysis are:
 * The Ph.D. stipends had a significant decrease around the 2008 crisis.
 * The Ph.D. stipends are not equal between departments.
 
-### [Analyze BrainPoste Blog traffic](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Blog_Google_Analytics)
+### [Analyze BrainPost Blog traffic](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Blog_Google_Analytics)
 
 This project was proposed by the [Data Scientist Syndicate](https://cheekyscientist.com/career-programs/data-scientist-syndicate/) facebook group.
 
