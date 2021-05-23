@@ -8,7 +8,7 @@ I am a Senior Scientist with experience in immunology, molecular biology and dat
 ## Contact Information
 William Guesdon, Manchester UK  
 <a href="mailto:wguesdon@gmail.com">email</a>   
-[Personal website](https://wguesdon.github.io//)  
+[Personal website](https://www.williamguesdon.com/)  
 [linkedIn](https://www.linkedin.com/in/william-guesdon/)  
 [Kaggle](https://www.kaggle.com/wguesdon)
 
