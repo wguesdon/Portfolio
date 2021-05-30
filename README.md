@@ -15,6 +15,12 @@ William Guesdon, Manchester UK
 ***
 ## Data Science projects
 
+### [VinBigData Chest X-ray Abnormalities Detection](https://github.com/66Days-group-learners/VinBigData_Chest_X-ray_Abnormalities_Detection)
+
+The goal of this [Kaggle](
+https://www.kaggle.com/c/vinbigdata-chest-xray-abnormalities-detection) competition was to develop a model capable of detecting Abnormalities on Chest X-rays and locating them. The model created by our team was ranked in the top 7% of the competition. 
+My role in the team was to run the GPU powered virtual machine used to improve our model. 
+
 ### [Determine Risks Factors Associated with Strokes](https://github.com/wguesdon/Data_Science_portfolio/tree/master/Data_Science_projects/Determine_Risks_Factors_Associated_with_Strokes)
 The goal of this project is to use statistical learning to identify the combination of the features that are more likely to be associated with stroke. For this analysis, I first performed an exploratory data analysis and feature engineering. As often seen in health-related datasets, the proportion of patients with stroke is low, resulting in a severely unbalanced dataset. To compensate for the unbalance, I used the ROSE package to artificially over sample the number of strokes observations.  
 I then used a dimension reduction technique adapted to mixed datasets of continuous and categorical variables with the FAMD package. This visualization allowed me to identify the features most likely associated with the risk of developing a stroke.
