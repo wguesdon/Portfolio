@@ -127,5 +127,5 @@ p2 <- ggbarplot(
 print("Data summary:")
 print(summary_data)
 
-ggsave("barplot.png", plot = p, width = 6, height = 5, dpi = 300)
+ggsave("mean_barplot.png", plot = p, width = 6, height = 5, dpi = 300)
 
