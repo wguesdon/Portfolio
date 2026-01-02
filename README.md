@@ -8,7 +8,7 @@ I am passionate about solving business problems using Data Science & Machine Lea
 ## Contact Information
 William Guesdon, Aberdeen UK  
 <a href="mailto:wguesdon@gmail.com">email</a>   
-[Personal website](https://www.williamguesdon.com/)  
+[Personal website](https://willguesdon.com/)
 [linkedIn](https://www.linkedin.com/in/william-guesdon/)  
 [Kaggle](https://www.kaggle.com/wguesdon)
 
