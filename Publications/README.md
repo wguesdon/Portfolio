@@ -1,5 +1,10 @@
 # Publications
 
+## **Two subsets of human marginal zone B cells resolved by global analysis of lymphoid tissues and blood**
+Jacqueline H Y Siu, Michael J Pitcher, Thomas J Tull, Rebekah L Velounias, **William Guesdon**, Lucia Montorsi, Krishnaa T Mahbubani, Richard Ellis, Pawan Dhami, Katrina Todd, Ulrich D Kadolsky, Michelle Kleeman, David P D'Cruz, Kourosh Saeb-Parsy, Mats Bemark, Gavin J Pettigrew, Jo Spencer
+Sci Immunol. 2022 Mar
+[Download here](https://www.science.org/doi/10.1126/sciimmunol.abm9060)
+
 ## **Cryptosporidium parvum Subverts Antimicrobial Activity of CRAMP by Reducing Its Expression in Neonatal Mice**
 **William Guesdon**, Tiffany Pezier, Sandrine Menard, Alessandra Nicolosi, Yves Le Vern, Anne Silvestre, Julien Diana, Fabrice Laurent, Sonia Lacroix-Lamandé  
 [Download here](https://www.mdpi.com/2076-2607/8/11/1635)  
