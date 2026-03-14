@@ -9,10 +9,11 @@ Ideas/
 **/*.pyc
 **/ensemble/*.npy
 
-# Virtual environments
+# Virtual environments & lock files
 **/.venv/
 **/venv/
 **/.env/
+**/uv.lock
 
 # Datasets - tabular
 *.csv
