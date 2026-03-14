@@ -1,8 +1,6 @@
 # Microbial Strain Analysis
 
-Exploratory data analysis and interactive dashboard for a bacterial strain
-database linking taxonomic classification, growth parameters, and media
-composition.
+**Interactive Streamlit dashboard and EDA** — Exploratory data analysis for a bacterial strain database linking taxonomic classification, growth parameters, and media composition. Surfaces patterns in temperature/pH niches, O2 tolerance, and media formulations across phylogenetically diverse organisms.
 
 ---
 
