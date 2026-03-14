@@ -1,8 +1,6 @@
 # nf-core RNA-seq & Differential Expression Pipeline
 
-End-to-end RNA-seq workflow using [nf-core/rnaseq](https://nf-co.re/rnaseq) and
-[nf-core/differentialabundance](https://nf-co.re/differentialabundance), running on
-**AWS Batch Spot instances** via Wave + Fusion.
+**~4,000 DEGs identified for $0.11 on AWS Spot** — End-to-end RNA-seq workflow using [nf-core/rnaseq](https://nf-co.re/rnaseq) and [nf-core/differentialabundance](https://nf-co.re/differentialabundance), running on AWS Batch Spot instances via Wave + Fusion.
 
 **Dataset:** [GSE52778](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE52778) — airway
 smooth muscle cells treated with dexamethasone (Himes et al. 2014)
