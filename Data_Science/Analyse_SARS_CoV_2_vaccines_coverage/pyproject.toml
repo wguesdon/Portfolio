@@ -1,0 +1,10 @@
+[project]
+name = "analyse-sars-cov-2-vaccines-coverage"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "pandas>=3.0.1",
+    "seaborn>=0.13.2",
+]
