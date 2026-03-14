@@ -1,0 +1,1235 @@
+---
+title: "R Basics for Bioinformatics Scientists"
+subtitle: "From Variables to Statistical Analysis with the Tidyverse"
+author: "Portfolio 2026"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    code-tools: true
+    self-contained: true
+    fig-align: center
+execute:
+  warning: false
+  message: false
+---
+
+# Part 1: R Fundamentals
+
+## 1.1 Variables and Data Types
+
+R uses `<-` as its primary assignment operator. The `=` sign also works but `<-` is
+the idiomatic choice.
+
+```{r}
+#| label: variables-basics
+
+# Assignment
+gene_name <- "BRCA1"
+expression_value <- 42.7
+is_upregulated <- TRUE
+sample_count <- 6L          # L suffix forces integer storage
+
+# Check types
+class(gene_name)
+class(expression_value)
+class(is_upregulated)
+class(sample_count)
+typeof(sample_count)
+```
+
+### Special Values
+
+R has several special values you will encounter regularly when working with
+biological data:
+
+```{r}
+#| label: special-values
+
+NA                           # Missing value (unknown)
+NULL                         # Empty / absent object
+NaN                          # Not a number (0 / 0)
+Inf                          # Infinity (1 / 0)
+
+# Testing for special values
+is.na(NA)
+is.null(NULL)
+is.nan(NaN)
+is.finite(Inf)
+```
+
+### Type Coercion
+
+R converts types automatically following the hierarchy:
+logical → integer → numeric → character.
+
+```{r}
+#| label: coercion
+
+# Automatic coercion
+c(TRUE, 1L, 3.14, "hello")  # everything becomes character
+
+# Explicit coercion
+as.numeric("42.5")
+as.integer(3.7)              # truncates, does NOT round
+as.character(100)
+as.logical(0)                # 0 → FALSE, non-zero → TRUE
+```
+
+## 1.2 Vectors
+
+Vectors are the most fundamental data structure in R. Every element must be the
+same type.
+
+```{r}
+#| label: vectors
+
+# Creating vectors
+gene_lengths <- c(1863, 5592, 2487, 945, 3210)
+samples <- c("ctrl_1", "ctrl_2", "treat_1", "treat_2")
+log_fc <- seq(-2, 2, by = 0.5)
+replicates <- rep(c("A", "B", "C"), times = 3)
+
+# Vectorised arithmetic
+gene_lengths_kb <- gene_lengths / 1000
+gene_lengths_kb
+
+# Logical comparisons (returns logical vector)
+long_genes <- gene_lengths > 2000
+long_genes
+
+# Indexing
+gene_lengths[1]              # first element
+gene_lengths[c(1, 3)]        # multiple elements
+gene_lengths[-2]             # exclude second element
+gene_lengths[long_genes]     # logical indexing
+```
+
+### Named Vectors
+
+```{r}
+#| label: named-vectors
+
+expression <- c(BRCA1 = 12.3, TP53 = 8.7, MYC = 45.1, EGFR = 22.0)
+expression["MYC"]
+
+# Useful functions
+length(expression)
+names(expression)
+sort(expression)
+which.max(expression)
+sum(expression > 15)         # count elements meeting a condition
+```
+
+## 1.3 Lists
+
+Lists can hold elements of different types and lengths — useful for storing
+mixed results (e.g., from a statistical test).
+
+```{r}
+#| label: lists
+
+experiment <- list(
+  name       = "RNA-seq time course",
+  organism   = "Homo sapiens",
+  timepoints = c(0, 6, 12, 24),
+  n_samples  = 12,
+  paired     = TRUE
+)
+
+# Access elements
+experiment$organism          # by name with $
+experiment[["timepoints"]]   # by name with [[]]
+experiment[[4]]              # by position
+
+# str() shows the structure
+str(experiment)
+```
+
+## 1.4 Matrices
+
+Matrices are 2D structures where every element shares the same type. They
+frequently represent gene expression tables before conversion to data frames.
+
+```{r}
+#| label: matrices
+
+# Create a small expression matrix (genes × samples)
+expr_mat <- matrix(
+  c(5.2, 3.1, 8.4, 6.7,
+    2.0, 1.5, 7.3, 5.9,
+    9.1, 8.8, 4.2, 3.5),
+  nrow = 3, byrow = TRUE
+)
+rownames(expr_mat) <- c("GeneA", "GeneB", "GeneC")
+colnames(expr_mat) <- c("S1", "S2", "S3", "S4")
+expr_mat
+
+# Indexing
+expr_mat["GeneA", ]          # one row
+expr_mat[, "S2"]             # one column
+expr_mat[1:2, 3:4]           # sub-matrix
+
+# Row/column operations
+rowMeans(expr_mat)
+apply(expr_mat, 1, sd)       # row-wise standard deviation
+t(expr_mat)                  # transpose
+```
+
+## 1.5 Data Frames
+
+Data frames are the workhorse for tabular data in R. Each column can hold a
+different type.
+
+```{r}
+#| label: data-frames
+
+# Create from scratch
+samples_df <- data.frame(
+  sample_id  = c("S1", "S2", "S3", "S4", "S5", "S6"),
+  group      = c("ctrl", "ctrl", "ctrl", "treat", "treat", "treat"),
+  rin_score  = c(8.2, 7.9, 8.5, 7.1, 8.0, 8.3),
+  lib_size   = c(25e6, 30e6, 28e6, 32e6, 27e6, 29e6)
+)
+
+# Inspection functions
+str(samples_df)
+summary(samples_df)
+head(samples_df, 3)
+dim(samples_df)
+nrow(samples_df)
+ncol(samples_df)
+```
+
+### Built-in Datasets
+
+R ships with many practice datasets:
+
+```{r}
+#| label: builtin-datasets
+
+head(mtcars, 5)
+head(iris, 5)
+```
+
+### Tibbles (Preview)
+
+The tidyverse uses **tibbles** — a modern take on data frames with better
+printing and stricter subsetting. We will use them extensively in Part 2.
+
+```{r}
+#| label: tibble-preview
+
+library(tibble)
+as_tibble(mtcars)
+```
+
+## 1.6 Control Flow
+
+### Conditionals
+
+```{r}
+#| label: conditionals
+
+pvalue <- 0.03
+
+if (pvalue < 0.001) {
+  significance <- "***"
+} else if (pvalue < 0.01) {
+  significance <- "**"
+} else if (pvalue < 0.05) {
+  significance <- "*"
+} else {
+  significance <- "ns"
+}
+significance
+
+# Vectorised conditional
+log_fc_vals <- c(-2.1, 0.3, 1.8, -0.1, 3.5)
+direction <- ifelse(log_fc_vals > 0, "up", "down")
+direction
+```
+
+### Loops
+
+```{r}
+#| label: loops
+
+# For loop — iterate over gene names
+genes <- c("BRCA1", "TP53", "MYC")
+for (gene in genes) {
+  cat("Processing:", gene, "\n")
+}
+
+# Collecting results in a pre-allocated vector
+gc_content <- c(0.42, 0.55, 0.61)
+names(gc_content) <- genes
+
+high_gc <- character(0)
+for (i in seq_along(gc_content)) {
+  if (gc_content[i] > 0.5) {
+    high_gc <- c(high_gc, names(gc_content)[i])
+  }
+}
+high_gc
+```
+
+> **Note**: In idiomatic R — especially with the tidyverse — vectorised
+> operations and `dplyr` verbs replace most loops.
+
+## 1.7 Functions
+
+```{r}
+#| label: functions
+
+# Calculate GC content of a DNA sequence
+gc_content <- function(sequence) {
+  bases <- strsplit(toupper(sequence), "")[[1]]
+  gc <- sum(bases %in% c("G", "C"))
+  gc / length(bases)
+}
+
+gc_content("ATGCGCTA")
+gc_content("AAATTTAAA")
+```
+
+### Default Arguments and Lambda Syntax
+
+```{r}
+#| label: functions-advanced
+
+# Default arguments
+normalize <- function(x, method = "zscore") {
+  if (method == "zscore") {
+    return((x - mean(x)) / sd(x))
+  }
+  if (method == "minmax") {
+    return((x - min(x)) / (max(x) - min(x)))
+  }
+  stop("Unknown method: ", method)
+}
+
+vals <- c(10, 20, 30, 40, 50)
+normalize(vals)
+normalize(vals, method = "minmax")
+
+# Lambda (anonymous) function — R 4.1+ syntax
+sapply(c("ATG", "GCGC", "AATT"), \(s) nchar(s))
+```
+
+
+# Part 2: Loading Data with the Tidyverse
+
+## 2.1 Setup
+
+```{r}
+#| label: tidyverse-setup
+
+library(tidyverse)    # loads dplyr, ggplot2, tidyr, readr, purrr, stringr, forcats, tibble
+library(readxl)
+library(writexl)
+```
+
+The `tidyverse` is a collection of packages that share a common design
+philosophy: tidy data, consistent function signatures, and the pipe operator.
+
+### The Pipe Operator
+
+The pipe passes the result of the left side as the **first argument** of the
+right side, making chains of transformations readable:
+```r
+# Without pipe
+summary(filter(select(data, col1, col2), col1 > 5))
+
+# With pipe — read top-to-bottom
+data |>
+  select(col1, col2) |>
+  filter(col1 > 5) |>
+  summary()
+```
+
+R 4.1+ provides the native pipe `|>`. The tidyverse also offers `%>%` from
+`magrittr`; both work identically for the vast majority of use cases.
+
+## 2.2 Creating Sample Data Files
+
+We create small example files inside a temporary directory so the tutorial is
+fully self-contained.
+
+```{r}
+#| label: create-sample-files
+
+# Simulated gene expression experiment
+set.seed(42)
+experiment_data <- tibble(
+  sample_id   = paste0("S", 1:20),
+  group       = rep(c("control", "treatment"), each = 10),
+  gene_BRCA1  = c(rnorm(10, mean = 5, sd = 1), rnorm(10, mean = 8, sd = 1.2)),
+  gene_TP53   = c(rnorm(10, mean = 12, sd = 2), rnorm(10, mean = 10, sd = 1.8)),
+  gene_MYC    = c(rnorm(10, mean = 3, sd = 0.5), rnorm(10, mean = 6, sd = 1)),
+  batch       = rep(c("batch_1", "batch_2"), times = 10),
+  rin_score   = round(runif(20, min = 6.5, max = 9.5), 1)
+)
+
+# Sample metadata
+sample_meta <- tibble(
+  sample_id = paste0("S", 1:20),
+  age       = sample(25:65, 20, replace = TRUE),
+  sex       = sample(c("M", "F"), 20, replace = TRUE),
+  site      = sample(c("site_A", "site_B", "site_C"), 20, replace = TRUE)
+)
+
+tmp <- tempdir()
+
+# Write in different formats
+write_csv(experiment_data, file.path(tmp, "expression.csv"))
+write_tsv(experiment_data, file.path(tmp, "expression.tsv"))
+write_xlsx(experiment_data, file.path(tmp, "expression.xlsx"))
+write_csv(sample_meta, file.path(tmp, "metadata.csv"))
+```
+
+## 2.3 Reading Data
+
+### CSV with `readr::read_csv()`
+
+```{r}
+#| label: read-csv
+
+expr <- read_csv(file.path(tmp, "expression.csv"))
+expr
+```
+
+Specify column types explicitly to avoid surprises:
+
+```{r}
+#| label: read-csv-coltypes
+
+expr <- read_csv(
+  file.path(tmp, "expression.csv"),
+  col_types = cols(
+    sample_id  = col_character(),
+    group      = col_factor(levels = c("control", "treatment")),
+    gene_BRCA1 = col_double(),
+    gene_TP53  = col_double(),
+    gene_MYC   = col_double(),
+    batch      = col_character(),
+    rin_score  = col_double()
+  )
+)
+```
+
+### TSV with `readr::read_tsv()`
+
+```{r}
+#| label: read-tsv
+
+expr_tsv <- read_tsv(file.path(tmp, "expression.tsv"))
+expr_tsv
+```
+
+### Excel with `readxl::read_excel()`
+
+```{r}
+#| label: read-excel
+
+expr_xl <- read_excel(file.path(tmp, "expression.xlsx"))
+expr_xl
+
+# List available sheets
+excel_sheets(file.path(tmp, "expression.xlsx"))
+```
+
+### Comparison with Base R
+
+| Feature | `read_csv()` | `read.csv()` |
+|---------|-------------|--------------|
+| Returns | tibble | data.frame |
+| Speed | faster | slower |
+| Column names | keeps as-is | converts `.` |
+| Strings | character | factor (old R) |
+| Progress bar | yes (large files) | no |
+
+
+# Part 3: Data Wrangling with dplyr and tidyr
+
+```{r}
+#| label: load-penguins
+
+library(palmerpenguins)
+penguins_clean <- penguins |> drop_na()
+penguins_clean
+```
+
+## 3.1 Core dplyr Verbs
+
+### `filter()` — Select Rows
+
+```{r}
+#| label: filter
+
+# Single condition
+penguins_clean |> filter(species == "Adelie")
+
+# Multiple conditions
+penguins_clean |>
+  filter(species == "Gentoo", body_mass_g > 5500)
+
+# Using %in%
+penguins_clean |>
+  filter(island %in% c("Biscoe", "Dream"))
+
+# Using between()
+penguins_clean |>
+  filter(between(bill_length_mm, 40, 50))
+```
+
+### `select()` — Choose Columns
+
+```{r}
+#| label: select
+
+# By name
+penguins_clean |> select(species, bill_length_mm, body_mass_g)
+
+# With helpers
+penguins_clean |> select(starts_with("bill"))
+penguins_clean |> select(where(is.numeric))
+
+# Drop columns
+penguins_clean |> select(-year, -island)
+```
+
+### `mutate()` — Add or Modify Columns
+
+```{r}
+#| label: mutate
+
+penguins_clean |>
+  mutate(
+    body_mass_kg  = body_mass_g / 1000,
+    bill_ratio    = bill_length_mm / bill_depth_mm,
+    size_category = case_when(
+      body_mass_g > 5000 ~ "large",
+      body_mass_g > 3500 ~ "medium",
+      TRUE               ~ "small"
+    )
+  ) |>
+  select(species, body_mass_kg, bill_ratio, size_category)
+```
+
+### `summarize()` and `group_by()`
+
+```{r}
+#| label: summarize
+
+# Ungrouped
+penguins_clean |>
+  summarize(
+    n           = n(),
+    mean_mass   = mean(body_mass_g),
+    sd_mass     = sd(body_mass_g),
+    median_bill = median(bill_length_mm)
+  )
+
+# Grouped by species
+penguins_clean |>
+  group_by(species) |>
+  summarize(
+    n         = n(),
+    mean_mass = mean(body_mass_g),
+    sd_mass   = sd(body_mass_g),
+    .groups   = "drop"
+  )
+
+# Grouped by species and sex
+penguins_clean |>
+  group_by(species, sex) |>
+  summarize(
+    mean_flipper = mean(flipper_length_mm),
+    .groups = "drop"
+  )
+```
+
+### `arrange()` — Sort Rows
+
+```{r}
+#| label: arrange
+
+penguins_clean |>
+  group_by(species) |>
+  summarize(mean_mass = mean(body_mass_g), .groups = "drop") |>
+  arrange(desc(mean_mass))
+```
+
+### `count()` and `distinct()`
+
+```{r}
+#| label: count-distinct
+
+penguins_clean |> count(species, island, sort = TRUE)
+penguins_clean |> distinct(species, island)
+```
+
+### `slice_*()` Functions
+
+```{r}
+#| label: slice
+
+# Top 3 heaviest penguins per species
+penguins_clean |>
+  group_by(species) |>
+  slice_max(body_mass_g, n = 3)
+
+# Random sample
+penguins_clean |> slice_sample(n = 5)
+```
+
+### `across()` — Apply Functions to Multiple Columns
+
+```{r}
+#| label: across
+
+penguins_clean |>
+  group_by(species) |>
+  summarize(
+    across(where(is.numeric), list(mean = mean, sd = sd)),
+    .groups = "drop"
+  )
+```
+
+## 3.2 Joins
+
+Joins combine two tables by matching rows on shared columns — essential for
+linking expression data to sample annotations.
+
+```{r}
+#| label: joins-setup
+
+gene_info <- tibble(
+  gene_id    = c("ENSG001", "ENSG002", "ENSG003", "ENSG004"),
+  gene_name  = c("BRCA1", "TP53", "MYC", "UNKNOWN"),
+  chromosome = c("chr17", "chr17", "chr8", "chr1")
+)
+
+expression <- tibble(
+  gene_id   = c("ENSG001", "ENSG002", "ENSG003", "ENSG005"),
+  sample    = c("S1", "S1", "S1", "S1"),
+  log2_expr = c(5.2, 8.1, 3.7, 6.0)
+)
+```
+
+```{r}
+#| label: joins
+
+# Keep all rows from the left table
+left_join(expression, gene_info, by = "gene_id")
+
+# Keep only rows present in BOTH tables
+inner_join(expression, gene_info, by = "gene_id")
+
+# Keep all rows from both tables
+full_join(expression, gene_info, by = "gene_id")
+
+# Rows in expression that have NO match in gene_info
+anti_join(expression, gene_info, by = "gene_id")
+```
+
+## 3.3 Reshaping with tidyr
+
+### `pivot_longer()` — Wide to Long
+
+Many ggplot2 geoms and statistical functions require **long** (tidy) format
+where each observation is a row.
+
+```{r}
+#| label: pivot-longer
+
+# Our expression data has genes as columns — make it long
+expr_long <- expr |>
+  pivot_longer(
+    cols      = starts_with("gene_"),
+    names_to  = "gene",
+    values_to = "expression",
+    names_prefix = "gene_"
+  )
+expr_long
+```
+
+### `pivot_wider()` — Long to Wide
+
+```{r}
+#| label: pivot-wider
+
+expr_long |>
+  pivot_wider(
+    names_from  = gene,
+    values_from = expression,
+    names_prefix = "gene_"
+  )
+```
+
+### `separate()` and `unite()`
+
+```{r}
+#| label: separate-unite
+
+genomic_coords <- tibble(
+  locus = c("chr1:1000-2000", "chr5:3400-4500", "chr17:7500-8900")
+)
+
+# Split into components
+genomic_coords |>
+  separate(locus, into = c("chr", "start", "end"), sep = "[:-]")
+
+# Combine columns
+tibble(chr = c("chr1", "chr5"), start = c(1000, 3400), end = c(2000, 4500)) |>
+  unite("locus", chr, start, end, sep = ":")
+```
+
+### Handling Missing Values
+
+```{r}
+#| label: missing-values
+
+df_with_na <- tibble(
+  gene  = c("A", "B", "C", "D"),
+  expr1 = c(5.2, NA, 3.1, 7.0),
+  expr2 = c(NA, 4.3, 2.8, 6.5)
+)
+
+df_with_na |> drop_na()                          # remove rows with any NA
+df_with_na |> drop_na(expr1)                     # only check expr1
+df_with_na |> replace_na(list(expr1 = 0, expr2 = 0))
+```
+
+
+# Part 4: Plotting with ggplot2
+
+## 4.1 The Grammar of Graphics
+
+ggplot2 builds plots in layers:
+
+1. **Data** — the tibble/data frame
+2. **Aesthetics** (`aes()`) — map variables to visual properties
+3. **Geoms** — geometric objects (points, lines, bars, …)
+4. **Scales** — control how values map to aesthetics
+5. **Facets** — split into sub-plots
+6. **Theme** — control non-data appearance
+
+```{r}
+#| label: first-plot
+#| fig-width: 7
+#| fig-height: 5
+
+ggplot(penguins_clean, aes(x = bill_length_mm, y = body_mass_g, color = species)) +
+  geom_point(alpha = 0.7, size = 2) +
+  labs(
+    title = "Penguin Body Mass vs Bill Length",
+    x = "Bill Length (mm)",
+    y = "Body Mass (g)",
+    color = "Species"
+  ) +
+  theme_minimal()
+```
+
+## 4.2 Common Geom Types
+
+### Scatter Plot — `geom_point()`
+
+```{r}
+#| label: geom-point
+#| fig-width: 7
+#| fig-height: 5
+
+ggplot(penguins_clean, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species, shape = sex), size = 2, alpha = 0.7) +
+  geom_smooth(method = "lm", se = TRUE, color = "grey30", linewidth = 0.8) +
+  theme_minimal()
+```
+
+### Bar Charts — `geom_bar()` and `geom_col()`
+
+```{r}
+#| label: geom-bar
+#| fig-width: 6
+#| fig-height: 4
+
+# geom_bar counts for you
+ggplot(penguins_clean, aes(x = species, fill = island)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Penguin Counts by Species and Island") +
+  theme_minimal()
+```
+
+```{r}
+#| label: geom-col
+#| fig-width: 6
+#| fig-height: 4
+
+# geom_col for pre-computed values
+penguins_clean |>
+  group_by(species) |>
+  summarize(mean_mass = mean(body_mass_g), .groups = "drop") |>
+  ggplot(aes(x = species, y = mean_mass, fill = species)) +
+  geom_col(show.legend = FALSE) +
+  labs(y = "Mean Body Mass (g)") +
+  theme_minimal()
+```
+
+### Histogram and Density
+
+```{r}
+#| label: histogram-density
+#| fig-width: 8
+#| fig-height: 4
+
+library(patchwork)
+
+p1 <- ggplot(penguins_clean, aes(x = body_mass_g, fill = species)) +
+  geom_histogram(bins = 30, alpha = 0.6, position = "identity") +
+  labs(title = "Histogram") +
+  theme_minimal()
+
+p2 <- ggplot(penguins_clean, aes(x = body_mass_g, fill = species)) +
+  geom_density(alpha = 0.5) +
+  labs(title = "Density") +
+  theme_minimal()
+
+p1 + p2
+```
+
+### Box Plot, Violin Plot, and Jitter
+
+```{r}
+#| label: boxplot-violin
+#| fig-width: 9
+#| fig-height: 4
+
+p1 <- ggplot(penguins_clean, aes(x = species, y = flipper_length_mm, fill = species)) +
+  geom_boxplot(alpha = 0.7, show.legend = FALSE) +
+  labs(title = "Box Plot") +
+  theme_minimal()
+
+p2 <- ggplot(penguins_clean, aes(x = species, y = flipper_length_mm, fill = species)) +
+  geom_violin(alpha = 0.5, show.legend = FALSE) +
+  geom_jitter(width = 0.15, alpha = 0.4, size = 1) +
+  labs(title = "Violin + Jitter") +
+  theme_minimal()
+
+p1 + p2
+```
+
+### Line Plot
+
+```{r}
+#| label: line-plot
+#| fig-width: 7
+#| fig-height: 4
+
+# Simulated time-course data
+set.seed(123)
+timecourse <- tibble(
+  time  = rep(c(0, 6, 12, 24, 48), each = 3),
+  gene  = rep(c("BRCA1", "TP53", "MYC"), times = 5),
+  expr  = c(
+    5, 12, 3,  7, 11, 5,  10, 9, 8,  12, 8, 12,  11, 7, 15
+  )
+)
+
+ggplot(timecourse, aes(x = time, y = expr, color = gene)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Gene Expression Time Course",
+    x = "Time (hours)", y = "Expression (log2 CPM)"
+  ) +
+  theme_minimal()
+```
+
+### Heatmap — `geom_tile()`
+
+```{r}
+#| label: heatmap
+#| fig-width: 6
+#| fig-height: 5
+
+# Correlation matrix of penguin numeric variables
+cor_mat <- penguins_clean |>
+  select(where(is.numeric)) |>
+  cor() |>
+  as.data.frame() |>
+  rownames_to_column("var1") |>
+  pivot_longer(-var1, names_to = "var2", values_to = "correlation")
+
+ggplot(cor_mat, aes(x = var1, y = var2, fill = correlation)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(correlation, 2)), size = 3) +
+  scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B", midpoint = 0) +
+  labs(title = "Correlation Heatmap") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## 4.3 Aesthetics — Mapping vs Setting
+
+```{r}
+#| label: aesthetics
+#| fig-width: 8
+#| fig-height: 4
+
+# MAPPING: variable controls the aesthetic
+p1 <- ggplot(penguins_clean, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(aes(color = species), size = 2) +
+  labs(title = "Color mapped to species") +
+  theme_minimal()
+
+# SETTING: fixed value for all points
+p2 <- ggplot(penguins_clean, aes(x = bill_length_mm, y = bill_depth_mm)) +
+  geom_point(color = "steelblue", size = 2, alpha = 0.6) +
+  labs(title = "Color set to steelblue") +
+  theme_minimal()
+
+p1 + p2
+```
+
+### Custom Scales
+
+```{r}
+#| label: custom-scales
+#| fig-width: 7
+#| fig-height: 5
+
+ggplot(penguins_clean, aes(x = body_mass_g, y = flipper_length_mm, color = species)) +
+  geom_point(size = 2, alpha = 0.7) +
+  scale_color_manual(values = c("Adelie" = "#E64B35", "Chinstrap" = "#4DBBD5", "Gentoo" = "#00A087")) +
+  scale_x_continuous(labels = scales::comma) +
+  theme_minimal()
+```
+
+## 4.4 Faceting
+
+```{r}
+#| label: facet-wrap
+#| fig-width: 9
+#| fig-height: 4
+
+ggplot(penguins_clean, aes(x = bill_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = sex), alpha = 0.6) +
+  geom_smooth(method = "lm", se = FALSE, linewidth = 0.8) +
+  facet_wrap(~species, scales = "free") +
+  labs(title = "Bill Length vs Body Mass by Species") +
+  theme_minimal()
+```
+
+```{r}
+#| label: facet-grid
+#| fig-width: 9
+#| fig-height: 6
+
+ggplot(penguins_clean, aes(x = flipper_length_mm, y = body_mass_g)) +
+  geom_point(alpha = 0.5) +
+  facet_grid(sex ~ species) +
+  theme_bw()
+```
+
+## 4.5 Themes and Labels
+
+```{r}
+#| label: themes
+#| fig-width: 7
+#| fig-height: 5
+
+ggplot(penguins_clean, aes(x = species, y = body_mass_g, fill = species)) +
+  geom_boxplot(alpha = 0.8, show.legend = FALSE) +
+  labs(
+    title    = "Body Mass Distribution by Species",
+    subtitle = "Palmer Penguins dataset",
+    x        = NULL,
+    y        = "Body Mass (g)",
+    caption  = "Data: palmerpenguins R package"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_classic() +
+  theme(
+    plot.title    = element_text(face = "bold", size = 14),
+    plot.subtitle = element_text(color = "grey40"),
+    axis.text     = element_text(size = 11)
+  )
+```
+
+### Saving Plots
+
+```{r}
+#| label: ggsave
+#| eval: false
+
+# Save the last plot
+ggsave("my_figure.png", width = 7, height = 5, dpi = 300)
+ggsave("my_figure.pdf", width = 7, height = 5)
+```
+
+
+# Part 5: Statistical Analyses
+
+```{r}
+#| label: stats-setup
+
+library(rstatix)
+library(broom)
+library(ggpubr)
+```
+
+## 5.1 Descriptive Statistics
+
+```{r}
+#| label: descriptive-stats
+
+penguins_clean |>
+  group_by(species) |>
+  get_summary_stats(body_mass_g, type = "common")
+```
+
+### Normality Testing
+
+```{r}
+#| label: normality
+#| fig-width: 7
+#| fig-height: 4
+
+# Shapiro-Wilk test per group
+penguins_clean |>
+  group_by(species) |>
+  shapiro_test(body_mass_g)
+
+# Visual check with QQ plot
+ggplot(penguins_clean, aes(sample = body_mass_g)) +
+  stat_qq() +
+  stat_qq_line(color = "red") +
+  facet_wrap(~species, scales = "free") +
+  labs(title = "QQ Plots for Body Mass by Species") +
+  theme_minimal()
+```
+
+## 5.2 T-Tests
+
+### Two-Sample T-Test
+
+```{r}
+#| label: t-test
+
+# Compare bill length between Adelie and Chinstrap
+two_sp <- penguins_clean |>
+  filter(species %in% c("Adelie", "Chinstrap"))
+
+# Base R approach
+t_result <- t.test(bill_length_mm ~ species, data = two_sp)
+t_result
+
+# Tidy output with broom
+tidy(t_result)
+
+# rstatix approach
+two_sp |> t_test(bill_length_mm ~ species)
+```
+
+### Visualise with Significance
+
+```{r}
+#| label: t-test-plot
+#| fig-width: 5
+#| fig-height: 5
+
+ggboxplot(two_sp, x = "species", y = "bill_length_mm",
+          fill = "species", palette = "jco") +
+  stat_compare_means(method = "t.test", label = "p.signif",
+                     label.x = 1.5, label.y = 55)
+```
+
+## 5.3 ANOVA
+
+### One-Way ANOVA
+
+```{r}
+#| label: anova
+
+# Body mass across all three species
+penguins_clean |> anova_test(body_mass_g ~ species)
+
+# Post-hoc pairwise comparisons
+penguins_clean |> tukey_hsd(body_mass_g ~ species)
+```
+
+### Check Assumptions
+
+```{r}
+#| label: anova-assumptions
+
+# Levene's test for homogeneity of variances
+penguins_clean |> levene_test(body_mass_g ~ species)
+```
+
+### Visualise ANOVA Results
+
+```{r}
+#| label: anova-plot
+#| fig-width: 6
+#| fig-height: 5
+
+ggboxplot(penguins_clean, x = "species", y = "body_mass_g",
+          fill = "species", palette = "npg") +
+  stat_compare_means(method = "anova", label.y = 6800) +
+  stat_compare_means(comparisons = list(
+    c("Adelie", "Chinstrap"),
+    c("Adelie", "Gentoo"),
+    c("Chinstrap", "Gentoo")
+  ), method = "t.test", label = "p.signif")
+```
+
+## 5.4 Correlation
+
+```{r}
+#| label: correlation
+
+# Pearson correlation
+penguins_clean |>
+  cor_test(bill_length_mm, body_mass_g, method = "pearson")
+
+# Correlation matrix
+cor_results <- penguins_clean |>
+  select(where(is.numeric)) |>
+  cor_mat()
+cor_results
+
+# P-value matrix
+cor_results |> cor_get_pval()
+```
+
+```{r}
+#| label: correlation-plot
+#| fig-width: 7
+#| fig-height: 5
+
+ggplot(penguins_clean, aes(x = bill_length_mm, y = body_mass_g)) +
+  geom_point(aes(color = species), alpha = 0.6) +
+  geom_smooth(method = "lm", color = "black", linewidth = 0.8) +
+  stat_cor(method = "pearson", label.x = 33, label.y = 6200) +
+  labs(x = "Bill Length (mm)", y = "Body Mass (g)") +
+  theme_minimal()
+```
+
+## 5.5 Linear Regression
+
+### Simple Linear Regression
+
+```{r}
+#| label: simple-lm
+
+model_simple <- lm(body_mass_g ~ bill_length_mm, data = penguins_clean)
+summary(model_simple)
+```
+
+### Tidy Model Outputs with broom
+
+```{r}
+#| label: broom-outputs
+
+# Coefficients
+tidy(model_simple, conf.int = TRUE)
+
+# Model-level statistics (R-squared, AIC, etc.)
+glance(model_simple)
+
+# Row-level predictions and residuals
+augment(model_simple) |> head()
+```
+
+### Multiple Regression
+
+```{r}
+#| label: multiple-lm
+
+model_multi <- lm(body_mass_g ~ bill_length_mm + flipper_length_mm + species,
+                  data = penguins_clean)
+tidy(model_multi, conf.int = TRUE)
+glance(model_multi)
+```
+
+### Diagnostic Plots
+
+```{r}
+#| label: diagnostics
+#| fig-width: 8
+#| fig-height: 6
+
+par(mfrow = c(2, 2))
+plot(model_multi)
+par(mfrow = c(1, 1))
+```
+
+## 5.6 Chi-Square Test
+
+Test whether species distribution is independent of island:
+
+```{r}
+#| label: chi-square
+
+# Contingency table
+table(penguins_clean$species, penguins_clean$island)
+
+# Chi-square test
+chisq.test(table(penguins_clean$species, penguins_clean$island))
+
+# Tidy approach
+penguins_clean |>
+  select(species, island) |>
+  table() |>
+  chisq_test()
+```
+
+```{r}
+#| label: chi-square-plot
+#| fig-width: 7
+#| fig-height: 5
+
+ggplot(penguins_clean, aes(x = island, fill = species)) +
+  geom_bar(position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  labs(
+    title = "Species Composition by Island",
+    y = "Proportion"
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal()
+```
+
+
+# Summary
+
+| Topic | Key Functions |
+|-------|---------------|
+| **Data types** | `class()`, `typeof()`, `is.*()`, `as.*()` |
+| **Vectors** | `c()`, `seq()`, `rep()`, `length()`, `which()` |
+| **Data frames** | `str()`, `summary()`, `head()`, `dim()` |
+| **Read data** | `read_csv()`, `read_tsv()`, `read_excel()` |
+| **Filter rows** | `filter()`, `slice_max()`, `distinct()` |
+| **Select columns** | `select()`, `starts_with()`, `where()` |
+| **Transform** | `mutate()`, `case_when()`, `across()` |
+| **Summarize** | `summarize()`, `group_by()`, `count()` |
+| **Reshape** | `pivot_longer()`, `pivot_wider()`, `separate()` |
+| **Join** | `left_join()`, `inner_join()`, `anti_join()` |
+| **Plot** | `ggplot()`, `geom_*()`, `facet_wrap()`, `theme_*()` |
+| **T-test** | `t.test()`, `t_test()`, `stat_compare_means()` |
+| **ANOVA** | `anova_test()`, `tukey_hsd()`, `levene_test()` |
+| **Correlation** | `cor_test()`, `cor_mat()`, `stat_cor()` |
+| **Regression** | `lm()`, `tidy()`, `glance()`, `augment()` |
+| **Chi-square** | `chisq.test()`, `chisq_test()` |
+
+## Next Steps
+
+- **Bioconductor**: Explore packages for genomics (`DESeq2`, `edgeR`, `GenomicRanges`)
+- **R for Data Science** (2e): Free online at [r4ds.hadley.nz](https://r4ds.hadley.nz)
+- **Statistical Rethinking**: Bayesian approaches for scientific data analysis
+- **Bioconductor Workflows**: Curated analysis pipelines at [bioconductor.org/packages/release/BiocViews.html#___Workflow](https://bioconductor.org/packages/release/BiocViews.html#___Workflow)
