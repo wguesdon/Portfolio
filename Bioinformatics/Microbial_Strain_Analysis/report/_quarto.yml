@@ -1,0 +1,17 @@
+project:
+  type: default
+  output-dir: ../Output
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    fig-width: 10
+    fig-height: 6
+    self-contained: true

@@ -1,0 +1,165 @@
+---
+title: "Microbial Strain Analysis — Exploratory Data Analysis"
+author: "Will"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    fig-width: 10
+    fig-height: 6
+execute:
+  warning: false
+  message: false
+jupyter: python3
+---
+
+```{python}
+#| label: setup
+#| include: false
+exec(open('scripts/setup.py').read())
+```
+
+## Introduction
+
+Comprehensive exploratory data analysis of a bacterial strain database provided as a
+bioinformatics take-home challenge. The goal is to characterise taxonomic diversity,
+growth parameters, and media/compound preferences of the strains.
+
+**Objectives**
+
+1. Quantify data completeness and flag quality issues.
+2. Characterise taxonomic distribution across phyla and classes.
+3. Understand growth parameter distributions (temperature, pH, O₂ tolerance).
+4. Profile growth media — richness, strain coverage, and most common compounds.
+5. Identify cross-variable patterns relevant to media prediction or strain clustering.
+
+---
+
+## Dataset Overview
+
+The database consists of four relational CSV files:
+
+| Table | Description |
+|---|---|
+| `strains.csv` | Taxonomic classification and growth parameters per strain |
+| `strain_media.csv` | Maps each strain to its compatible growth media |
+| `media_compounds.csv` | Maps each medium to its constituent compounds |
+| `compounds.csv` | Compound ID–name lookup |
+
+```{python}
+#| label: dataset-overview
+exec(open('scripts/s01_dataset_overview.py').read())
+```
+
+---
+
+## Data Quality
+
+```{python}
+#| label: data-quality
+exec(open('scripts/s02_data_quality.py').read())
+```
+
+::: {.callout-note}
+Temperatures above 80°C or below 0°C may represent data entry errors (e.g., Fahrenheit
+values not converted). pH values outside 0–14 should be flagged for validation.
+:::
+
+---
+
+## Taxonomic Distribution
+
+### Phylum-level Diversity
+
+```{python}
+#| label: taxonomy-phylum
+exec(open('scripts/s03_taxonomy.py').read())
+```
+
+### Hierarchical View (Phylum → Class)
+
+```{python}
+#| label: taxonomy-treemap
+exec(open('scripts/s03b_taxonomy_treemap.py').read())
+```
+
+### O₂ Tolerance & Phylum × O₂ Heatmap
+
+```{python}
+#| label: taxonomy-o2
+exec(open('scripts/s03c_o2_phylum_heatmap.py').read())
+```
+
+::: {.callout-tip}
+The heatmap highlights phyla that are exclusively aerobic, anaerobic, or facultative.
+Firmicutes show strong anaerobic enrichment; Proteobacteria are predominantly aerobic.
+:::
+
+---
+
+## Growth Parameters
+
+### Temperature & pH Distributions
+
+```{python}
+#| label: growth-params
+exec(open('scripts/s04_growth_params.py').read())
+```
+
+::: {.callout-note}
+Mesophilic aerobes (~37°C, pH ~7) form the densest cluster. Thermophiles (>55°C)
+largely occupy neutral-to-alkaline pH ranges.
+:::
+
+### Correlation Between Growth Parameters
+
+```{python}
+#| label: growth-correlation
+exec(open('scripts/s04b_correlation.py').read())
+```
+
+---
+
+## Media & Compounds
+
+```{python}
+#| label: media-compounds
+exec(open('scripts/s05_media_compounds.py').read())
+```
+
+---
+
+## Key Findings
+
+```{python}
+#| label: findings
+exec(open('scripts/s06_findings.py').read())
+```
+
+---
+
+## Further Exploration Directions
+
+- **Media prediction**: classify preferred growth medium from growth parameters + taxonomy.
+- **Strain clustering**: cluster strains by compound fingerprint using Jaccard / binary PCA.
+- **Network analysis**: bipartite strain–compound network to identify compound communities.
+- **Phylogenetic mapping**: overlay O₂ tolerance or temperature niche onto a taxonomic tree.
+- **Outlier investigation**: extreme temp/pH values may be data errors or novel physiology.
+
+---
+
+## Session Info
+
+```{python}
+#| label: session-info
+import importlib
+for pkg in ["pandas", "numpy", "plotly", "scipy"]:
+    print(f"{pkg}: {importlib.import_module(pkg).__version__}")
+```
