@@ -89,6 +89,9 @@ Ideas/
 *.7z
 *.rar
 
+# Large HTML reports
+Bioinformatics/Microbial_Strain_Analysis/Output/eda_report.html
+
 # R build artifacts
 **/renv/
 **/.Rproj.user/
