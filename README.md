@@ -70,6 +70,10 @@ William Guesdon |
 
 **Stipend trends over time** — Data cleaning and analysis of Ph.D. student stipends by university and department. Key findings: higher US stipends, no increase with seniority, significant drop around the 2008 crisis, and disparities between departments.
 
+### [Bioinformatics Job Market Analysis](Data_Science/Bioinformatics_Job_Market_Analysis)
+
+**1,677 job postings analysed** — Explores bioinformatics job market trends from December 2024 postings across the USA, UK, and Ireland. Identifies in-demand skills (clinical expertise, R, Python), salary distributions (median $75.5k), geographic hotspots, and skill co-occurrence patterns.
+
 ### [SARS-CoV-2 Vaccine Coverage](Data_Science/Analyse_SARS_CoV_2_vaccines_coverage)
 
 **Global vaccine comparison** — Compares vaccine coverage between countries and explores the correlation between coverage and vaccine hesitancy.

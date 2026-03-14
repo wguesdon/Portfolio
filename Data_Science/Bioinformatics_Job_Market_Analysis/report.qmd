@@ -1,0 +1,160 @@
+---
+title: "Bioinformatics Job Market Analysis"
+subtitle: "Insights from 1,677 Bioinformatics Job Postings (December 2024)"
+author: "William Guesdon"
+date: "2024-12-26"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    theme: cosmo
+    self-contained: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+## Overview
+
+This analysis examines **1,677 bioinformatics job postings** collected in December 2024, covering positions across the **USA** (1,635), **UK** (40), and **Ireland** (2). We explore the most in-demand skills, salary distributions, geographic trends, and skill co-occurrence patterns.
+
+```{python}
+from pathlib import Path
+from IPython.display import Image, display
+
+output_dir = Path("output")
+```
+
+## Skills Analysis
+
+We searched each job description for 28 bioinformatics-related keywords, counting each skill at most once per posting. Variations of "R" (R-based, R programming) and "statistical/statistics" were unified before counting.
+
+```{python}
+#| label: fig-skills
+#| fig-cap: "Distribution of technical skills and domain keywords across all job postings."
+display(Image(filename=output_dir / "skills_distribution.png"))
+```
+
+Key findings:
+
+- **Clinical** expertise is the most frequently mentioned keyword (778 postings, 46%), reflecting the translational nature of many bioinformatics roles.
+- **Statistics** (675, 40%) and **R** (514, 31%) dominate the analytical toolkit, followed by **Python** (418, 25%).
+- **Genomics** (196) and **NGS** (114) remain core domain requirements.
+- Cloud computing skills (**cloud**: 143, **AWS**: 65) appear in a growing number of postings.
+- Deep learning frameworks (PyTorch: 44, TensorFlow: 39) and generative AI (genAI: 17, LLM: 6) have emerging but still modest demand.
+- Workflow managers like **Nextflow** (27) and **Snakemake** (12) appear in a smaller subset of bioinformatics-specific roles.
+
+## Geographic Distribution
+
+### Top Locations
+
+```{python}
+#| label: fig-locations
+#| fig-cap: "Top 10 cities by number of job postings."
+display(Image(filename=output_dir / "location_distribution.png"))
+```
+
+The job market is concentrated in major US biotech and tech hubs: **Seattle** (68), **Chicago** (67), **Houston** (58), **Austin** (56), and **Los Angeles** (55). The distribution is relatively even across top cities, suggesting bioinformatics opportunities are not limited to a single region.
+
+## Salary Analysis
+
+### Overall Distribution (USA)
+
+```{python}
+#| label: fig-salary-usa
+#| fig-cap: "Distribution of average salaries for US-based bioinformatics positions."
+display(Image(filename=output_dir / "salary_distribution_usa.png"))
+```
+
+For the **761 US postings with salary data**:
+
+- **Median salary**: $75,500
+- **Interquartile range**: $35,000 – $106,000
+- **Mean salary**: $75,339
+- Salaries span a wide range from entry-level technician roles (~$18/hr) to senior positions ($375,000).
+
+### UK Salaries
+
+```{python}
+#| label: fig-salary-uk
+#| fig-cap: "Distribution of average salaries for UK-based bioinformatics positions."
+display(Image(filename=output_dir / "salary_distribution_uk.png"))
+```
+
+The UK sample is smaller (15 postings with salary data), with a **median of £43,525** and a range from £15,275 to £177,000.
+
+## Job Type Distribution
+
+```{python}
+#| label: fig-job-type
+#| fig-cap: "Distribution of job types across all postings."
+display(Image(filename=output_dir / "job_type_distribution.png"))
+```
+
+## Company Ratings
+
+```{python}
+#| label: fig-ratings
+#| fig-cap: "Distribution of company ratings for employers posting bioinformatics roles."
+display(Image(filename=output_dir / "company_rating_distribution.png"))
+```
+
+## Skill Co-occurrence Analysis
+
+To understand which skills tend to appear together in job descriptions, we built a co-occurrence matrix for six key skills and visualized the relationships using radar (spider) charts.
+
+### Python Co-occurrence
+
+```{python}
+#| label: fig-spider-python
+#| fig-cap: "Co-occurrence of Python with other skills across job postings."
+display(Image(filename=output_dir / "spider_python.png"))
+```
+
+Python most frequently co-occurs with **R** (418 postings), **statistics** (296), and **ML** (114). It is also strongly associated with **cloud** skills (102), reflecting the role of Python in cloud-based data pipelines.
+
+### R Co-occurrence
+
+```{python}
+#| label: fig-spider-r
+#| fig-cap: "Co-occurrence of R with other skills across job postings."
+display(Image(filename=output_dir / "spider_r.png"))
+```
+
+R shows broad co-occurrence across all categories, with particularly strong overlap with **statistics** (702) and **Python** (418).
+
+### Statistics Co-occurrence
+
+```{python}
+#| label: fig-spider-statistics
+#| fig-cap: "Co-occurrence of statistics with other skills across job postings."
+display(Image(filename=output_dir / "spider_statistics.png"))
+```
+
+### Multi-Skill Overlay
+
+```{python}
+#| label: fig-spider-multi
+#| fig-cap: "Radar chart comparing co-occurrence patterns across all six skills."
+display(Image(filename=output_dir / "spider_multi_skill.png"))
+```
+
+The multi-skill radar reveals that **R** has the broadest co-occurrence profile, appearing alongside virtually every other skill. **Python** and **statistics** form the next most connected pair. **SPSS** is relatively isolated, mostly co-occurring with statistics and R but rarely with cloud or ML skills.
+
+## R vs Python Adoption
+
+Among the 1,677 postings:
+
+- **514 (31%)** mention R
+- **418 (25%)** mention Python
+- Both languages remain essential, with R having a slight edge in this bioinformatics-focused dataset — likely due to its strong presence in statistical and clinical research contexts.
+
+## Conclusions
+
+1. **Clinical and statistical skills dominate** the bioinformatics job market, with traditional biostatistics tools (R, statistics, SPSS) remaining highly valued.
+2. **Python is gaining ground** and is strongly associated with machine learning and cloud computing roles.
+3. **Salaries are competitive**, with a US median of ~$75,500 and significant upside for senior roles.
+4. **Geographic distribution is broad**, with opportunities spread across multiple US biotech hubs rather than concentrated in a single location.
+5. **Emerging technologies** (generative AI, LLMs, deep learning) are starting to appear but are not yet mainstream requirements.

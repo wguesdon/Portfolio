@@ -1,0 +1,18 @@
+[project]
+name = "bioinformatics-job-market-analysis"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.8",
+    "nbformat>=5.10.4",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.1",
+    "plotly>=6.6.0",
+    "polars>=1.39.0",
+    "quarto-cli>=1.8.27",
+    "scikit-learn>=1.8.0",
+    "seaborn>=0.13.2",
+]
