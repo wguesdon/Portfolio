@@ -1,0 +1,18 @@
+# Nextflow runtime
+.nextflow/
+.nextflow.log*
+work/
+
+# Large data files — download locally with: make data-airway
+data/airway/*.fastq.gz
+data/airway/*.fa.gz
+data/airway/*.gtf.gz
+data/airway/dummy_genome.fasta
+data/airway/samplesheet.csv
+data/airway/samplesheet_s3.csv
+
+# Local results (large files)
+results/
+
+# S3 mount (if using s3fs or similar)
+s3:/

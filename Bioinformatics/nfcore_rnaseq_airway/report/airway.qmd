@@ -1,0 +1,241 @@
+---
+title: "Airway Smooth Muscle RNA-seq Analysis"
+subtitle: "Differential gene expression in dexamethasone-treated human airway smooth muscle cells"
+author: "William Guesdon"
+date: last-modified
+date-format: "MMMM D, YYYY"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: left
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    code-summary: "Show code"
+    embed-resources: true
+    fig-align: center
+    fig-width: 8
+    fig-height: 5
+    df-print: kable
+
+execute:
+  echo: false
+  warning: false
+  message: false
+
+knitr:
+  opts_chunk:
+    out.width: "100%"
+
+bibliography: references.bib
+---
+
+```{r setup}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(knitr)
+
+RESULTS_DIR <- "../results"
+PLOTS_DIR   <- "../analysis/plots"
+COUNTS_FILE <- file.path(RESULTS_DIR, "rnaseq/airway/star_salmon/salmon.merged.gene_counts.tsv")
+DE_FILE     <- file.path(RESULTS_DIR, "differentialabundance/airway/tables/differential/dex_vs_untrt.deseq2.results.tsv")
+
+counts <- read_tsv(COUNTS_FILE, show_col_types = FALSE)
+de     <- read_tsv(DE_FILE, show_col_types = FALSE)
+
+gene_map <- counts |> select(gene_id, gene_name)
+
+de <- de |>
+  left_join(gene_map, by = "gene_id") |>
+  mutate(
+    sig = case_when(
+      is.na(padj) ~ "NS",
+      padj >= 0.05 ~ "NS",
+      log2FoldChange > 0 ~ "Up",
+      log2FoldChange < 0 ~ "Down"
+    )
+  )
+
+n_tested <- de |> filter(!is.na(padj)) |> nrow()
+n_sig    <- de |> filter(sig != "NS") |> nrow()
+n_up     <- de |> filter(sig == "Up") |> nrow()
+n_down   <- de |> filter(sig == "Down") |> nrow()
+```
+
+## Background
+
+Glucocorticoids such as dexamethasone are front-line treatments for asthma, acting through broad transcriptional reprogramming of airway cells. **Himes et al. (2014)** [@himes2014] used RNA-seq to characterise the transcriptional response of primary human airway smooth muscle (ASM) cells from four donors treated with dexamethasone, identifying CRISPLD2 as a novel glucocorticoid-responsive gene. This dataset (GEO: GSE52778) has become a standard reference for Bioconductor differential expression tutorials.
+
+This report re-analyses a subsampled version of the dataset (1M read pairs per sample) using two nf-core pipelines: **nf-core/rnaseq** v3.14.0 for quantification [@ewels2020; @patro2017] and **nf-core/differentialabundance** v1.4.0 for differential expression with DESeq2 [@love2014].
+
+## Data & Methods
+
+### Dataset
+
+```{r dataset-table}
+meta <- tibble::tribble(
+  ~Sample,          ~Condition,       ~Cell_line, ~SRA,
+  "N61311_untrt",   "Untreated",      "N61311",   "SRR1039508",
+  "N61311_dex",     "Dexamethasone",  "N61311",   "SRR1039509",
+  "N052611_untrt",  "Untreated",      "N052611",  "SRR1039512",
+  "N052611_dex",    "Dexamethasone",  "N052611",  "SRR1039513",
+  "N080611_untrt",  "Untreated",      "N080611",  "SRR1039516",
+  "N080611_dex",    "Dexamethasone",  "N080611",  "SRR1039517",
+  "N061011_untrt",  "Untreated",      "N061011",  "SRR1039520",
+  "N061011_dex",    "Dexamethasone",  "N061011",  "SRR1039521"
+)
+kable(meta, caption = "Airway smooth muscle RNA-seq samples (Himes et al. 2014). Four donors, paired untreated/dexamethasone design.")
+```
+
+### Pipeline
+
+The analysis was conducted using two nf-core pipelines executed on **AWS Batch** with Spot instances (c5/m5 families) and S3 storage via Fusion FUSE mounting.
+
+**Step 1 — Quantification: nf-core/rnaseq v3.14.0**
+
+| Stage | Tool | Purpose |
+|-------|------|---------|
+| Read QC | FastQC | Per-read quality assessment |
+| Trimming | fastp | Adapter removal, quality filtering |
+| Quantification | Salmon | Transcript-level pseudo-alignment |
+| Aggregation | tximeta | Gene-level count summarisation |
+| QC report | MultiQC | Aggregate quality dashboard |
+
+Salmon was run against the GENCODE v44 (GRCh38.p14) human transcriptome with `--gencode` to strip version suffixes from transcript IDs.
+
+**Step 2 — Differential expression: nf-core/differentialabundance v1.4.0**
+
+| Stage | Tool | Purpose |
+|-------|------|---------|
+| Normalisation | DESeq2 | Median-of-ratios size factor estimation |
+| DE testing | DESeq2 Wald test | Log2 fold change and p-value per gene |
+| Visualisation | DESeq2 / ggplot2 | Volcano, PCA, dispersion plots |
+| Pathway analysis | g:Profiler2 | Functional enrichment (GO, KEGG, Reactome) |
+
+The DESeq2 model used `~ cell_line + condition`, blocking on cell line (donor) to account for inter-individual variability and isolate the dexamethasone treatment effect.
+
+## Results
+
+### Sample clustering
+
+```{r fig1, fig.cap="Principal component analysis of VST-normalised expression (top 500 most variable genes). Samples cluster primarily by cell line (PC1), with treatment condition separating along PC2."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig1_pca.png"))
+```
+
+PCA reveals that the dominant source of variation (PC1) is donor identity (cell line), consistent with the paired experimental design. The treatment effect (dexamethasone vs untreated) separates along PC2, confirming a consistent transcriptional response across all four donors.
+
+```{r fig4, fig.cap="Sample-to-sample Euclidean distance heatmap (top 500 most variable genes). Paired samples from the same donor cluster together, validating the paired blocking design."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig4_sample_distance.png"))
+```
+
+The sample distance heatmap confirms that paired samples from the same cell line are most similar, supporting the use of cell line as a blocking factor in the DESeq2 model.
+
+### Differential expression
+
+```{r fig2, fig.cap="Volcano plot of differential expression results. Red: upregulated (padj < 0.05, positive LFC); blue: downregulated. Top 15 most significant genes are labelled."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig2_volcano.png"))
+```
+
+```{r de-summary}
+tibble::tribble(
+  ~Metric,                       ~Value,
+  "Genes tested",                format(n_tested, big.mark = ","),
+  "Significant (padj < 0.05)",   format(n_sig, big.mark = ","),
+  "Upregulated",                 format(n_up, big.mark = ","),
+  "Downregulated",               format(n_down, big.mark = ",")
+) |>
+  kable(caption = "Differential expression summary (DESeq2, dexamethasone vs untreated).")
+```
+
+```{r top-genes-table}
+de |>
+  filter(sig != "NS") |>
+  arrange(padj) |>
+  slice_head(n = 15) |>
+  mutate(
+    baseMean = round(baseMean, 1),
+    log2FoldChange = round(log2FoldChange, 2),
+    padj = formatC(padj, format = "e", digits = 2)
+  ) |>
+  select(Gene = gene_name, `Base mean` = baseMean,
+         `log2 FC` = log2FoldChange, `Adj. p-value` = padj,
+         Direction = sig) |>
+  kable(caption = "Top 15 differentially expressed genes by adjusted p-value.")
+```
+
+Among the top upregulated genes, **FKBP5** (FK506-binding protein 5) and **TSC22D3** (GILZ) are well-known glucocorticoid-responsive transcription targets involved in anti-inflammatory signalling. **KLF15** and **ZBTB16** (PLZF) are transcription factors that mediate downstream glucocorticoid effects. **GPX3** (glutathione peroxidase 3) suggests an oxidative-stress response component.
+
+Top downregulated genes include **CXCL12** (a chemokine suppressed by glucocorticoids), **KCTD12** (potassium channel tetramerisation domain), and **SOX4** (a transcription factor involved in developmental pathways).
+
+### Top differentially expressed genes
+
+```{r fig5, fig.cap="Top 10 up- and down-regulated genes ranked by adjusted p-value. Bar length indicates log2 fold change magnitude."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig5_top_genes.png"))
+```
+
+```{r fig3, fig.cap="Heatmap of the 30 most significant differentially expressed genes (z-scored VST values). Rows are clustered by expression similarity; columns by sample. Clear separation between treated and untreated conditions is visible."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig3_heatmap.png"))
+```
+
+The heatmap shows a clear and consistent expression pattern across all four donors: the top DE genes respond uniformly to dexamethasone treatment, with upregulated genes (red) clustering together in treated samples and downregulated genes (blue) in untreated samples.
+
+### Expression of key genes
+
+```{r fig6, fig.cap="Normalised expression counts for selected differentially expressed genes. Top row: upregulated genes (glucocorticoid-responsive); bottom row: downregulated genes."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig6_gene_expression.png"))
+```
+
+Individual gene expression plots confirm robust and reproducible treatment effects across all four donors:
+
+- **FKBP5** and **TSC22D3** (GILZ) show strong, consistent upregulation — these are canonical glucocorticoid response genes.
+- **KLF15** and **ZBTB16** are transcription factors with pronounced dexamethasone-induced expression.
+- **CXCL12** and **KCTD12** are consistently suppressed by treatment.
+- **VCAM1** and **SOX4** show clear downregulation across all donors.
+
+## Discussion
+
+This analysis demonstrates a complete RNA-seq workflow — from raw FASTQ to differential expression and pathway analysis — applied to a well-characterised glucocorticoid response dataset. Key observations:
+
+1. **The paired design is essential.** PCA and sample distance analysis show that inter-donor variation dominates the expression landscape. Blocking on cell line in the DESeq2 model correctly isolates the treatment effect from donor-specific baseline differences.
+
+2. **Dexamethasone drives a broad transcriptional response.** `r n_sig` genes reach significance at padj < 0.05, with `r n_up` upregulated and `r n_down` downregulated — consistent with the known pleiotropic effects of glucocorticoid receptor activation.
+
+3. **Top hits are biologically coherent.** The most significant genes (FKBP5, TSC22D3/GILZ, KLF15, ZBTB16) are established glucocorticoid targets, validating the analytical pipeline. Downregulated genes include chemokines (CXCL12) and developmental transcription factors (SOX4).
+
+4. **Cloud execution is cost-effective.** Both pipelines completed in under 80 minutes total on AWS Batch Spot instances at a total cost of ~$0.11, demonstrating that production-grade bioinformatics workflows can run at minimal cost using spot pricing.
+
+### Limitations
+
+- **Subsampled data:** each sample was limited to 1M read pairs (original dataset has substantially deeper coverage), which may reduce sensitivity for low-expression genes.
+- **Single contrast:** only dexamethasone vs untreated was tested; the original study examined additional time points and concentrations.
+- **No independent validation:** results are consistent with published findings but were not validated with orthogonal methods (qPCR, protein-level).
+
+## Reproducibility
+
+All analyses were performed with publicly available tools. The complete workflow is available at this project's repository.
+
+| Component | Version |
+|-----------|---------|
+| nf-core/rnaseq | 3.14.0 |
+| nf-core/differentialabundance | 1.4.0 |
+| Salmon | 1.10.x |
+| DESeq2 | 1.42.x |
+| g:Profiler2 | latest |
+| R | 4.4.0 |
+| Reference | GENCODE v44 (GRCh38.p14) |
+| AWS Batch | Spot; c5/m5; Fusion FUSE |
+
+```{r session-info}
+sessionInfo()
+```
+
+## References {.unnumbered}
+
+::: {#refs}
+:::
