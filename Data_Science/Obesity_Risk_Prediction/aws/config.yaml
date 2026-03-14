@@ -1,0 +1,48 @@
+competition:
+  name: "playground-series-s4e2"
+  s3_bucket: "kaggle-ps4e2"
+  metric: "accuracy"
+  target_column: "NObeyesdad"
+  num_classes: 7
+  classes:
+    - "Insufficient_Weight"
+    - "Normal_Weight"
+    - "Overweight_Level_I"
+    - "Overweight_Level_II"
+    - "Obesity_Type_I"
+    - "Obesity_Type_II"
+    - "Obesity_Type_III"
+
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+  original_data_path: "data/original.csv"
+
+training:
+  n_folds: 10
+  random_state: 43
+  n_trials: 0  # 0 = use pre-tuned notebook params (no Optuna re-tuning)
+
+# Notebook best LB weights: lgbm dominant (xgb:1, cat:0 matches notebook's final submission)
+ensemble:
+  lgb: 3
+  xgb: 1
+  cat: 0
+
+models:
+  enabled: ["lightgbm", "xgboost", "catboost"]
+  lightgbm:
+    instance_type: "ml.m5.4xlarge"
+    use_spot: true
+    max_runtime_hours: 4
+    max_wait_hours: 5
+  xgboost:
+    instance_type: "ml.g4dn.xlarge"
+    use_spot: true
+    max_runtime_hours: 4
+    max_wait_hours: 5
+  catboost:
+    instance_type: "ml.g5.xlarge"
+    use_spot: true
+    max_runtime_hours: 4
+    max_wait_hours: 5
