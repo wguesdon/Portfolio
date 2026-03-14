@@ -1,0 +1,22 @@
+[project]
+name = "matplotlib-figures"
+version = "0.1.0"
+description = "Publication-ready scientific figures using matplotlib, seaborn, and SciencePlots"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.9",
+    "seaborn>=0.13",
+    "SciencePlots>=2.1",
+    "scipy>=1.14",
+    "statannotations>=0.7",
+    "pandas>=2.2",
+    "numpy>=2.1",
+    "palmerpenguins>=0.1",
+    "gapminder>=0.1",
+    "setuptools<81",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29",
+]
