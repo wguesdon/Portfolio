@@ -1,0 +1,405 @@
+---
+title: "Publication-Ready Figures with ggpubr and ggprism"
+subtitle: "A Practical Guide Using Palmer Penguins, Gapminder, and Iris Datasets"
+author: "Portfolio 2026"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    code-tools: true
+    self-contained: true
+    fig-align: center
+execute:
+  warning: false
+  message: false
+---
+
+## Overview
+
+Producing clean, journal-quality figures in R often requires extensive ggplot2 customisation.
+The **ggpubr** package provides a high-level interface that simplifies common tasks such as
+adding statistical annotations, combining multiple panels, and applying consistent styling.
+**ggprism** complements it by adding GraphPad Prism-style themes, axis guides with minor
+ticks, and bracket-style categorical axis labels — features commonly expected in biomedical
+and life-science publications.
+
+All figures in this report use the **NPG (Nature Publishing Group)** colour palette for a
+consistent, journal-ready appearance.
+
+This report demonstrates these capabilities using three well-known public datasets:
+
+| Dataset | Source | Key Variables |
+|---------|--------|---------------|
+| **Palmer Penguins** | `palmerpenguins` R package | Species, island, morphometrics |
+| **Gapminder** | `gapminder` R package | Country, life expectancy, GDP per capita |
+| **Iris** | Base R | Species, sepal/petal measurements |
+
+```{r}
+#| label: setup
+library(ggpubr)
+library(ggprism)
+library(ggplot2)
+library(dplyr)
+library(palmerpenguins)
+library(gapminder)
+
+penguins_clean <- penguins |> filter(!is.na(bill_length_mm), !is.na(body_mass_g))
+
+# NPG palette colours
+npg_3 <- c("#E64B35", "#4DBBD5", "#00A087")
+npg_2 <- c("#E64B35", "#4DBBD5")
+```
+
+## Distribution Plots
+
+Visualising the shape of a distribution is one of the most common first steps in exploratory
+analysis. ggpubr's `ggdensity()` and `gghistogram()` wrap the corresponding ggplot2 geoms
+while adding useful annotations (mean/median lines, marginal rugs) with a single argument.
+Layering `theme_prism()` on top adds clean axis formatting with minor tick marks.
+
+### Density Plot — Body Mass by Species
+
+```{r}
+#| label: fig-density
+#| fig-cap: "Kernel density estimates of body mass for three penguin species. Vertical dashed lines mark group means."
+#| fig-width: 8
+#| fig-height: 5
+ggdensity(penguins_clean, x = "body_mass_g",
+          add = "mean", rug = TRUE,
+          color = "species", fill = "species",
+          palette = npg_3,
+          xlab = "Body Mass (g)", ylab = "Density",
+          title = "Body Mass Distribution by Penguin Species") +
+  theme_prism(base_size = 12) +
+  scale_y_continuous(guide = guide_prism_minor())
+```
+
+Gentoo penguins are clearly heavier on average, with a distribution shifted to the right
+relative to Adélie and Chinstrap.
+
+### Histogram — Bill Length by Species
+
+```{r}
+#| label: fig-histogram
+#| fig-cap: "Overlaid histograms of bill length. Dashed lines indicate group medians."
+#| fig-width: 8
+#| fig-height: 5
+gghistogram(penguins_clean, x = "bill_length_mm",
+            add = "median", rug = TRUE,
+            color = "species", fill = "species",
+            palette = npg_3,
+            xlab = "Bill Length (mm)", ylab = "Count",
+            title = "Bill Length Distribution by Species") +
+  theme_prism(base_size = 12) +
+  scale_y_continuous(guide = guide_prism_minor())
+```
+
+Adélie penguins cluster around shorter bill lengths (~38 mm), while Chinstrap and Gentoo
+show broader, higher distributions.
+
+## Group Comparisons
+
+### Box Plot with Significance Brackets
+
+Adding statistical comparisons directly to a figure avoids the need for readers to cross-reference
+a separate table. `stat_compare_means()` performs Wilcoxon tests by default and overlays the
+results as brackets. The `guide_prism_bracket()` on the x-axis draws bracket-style category
+labels reminiscent of GraphPad Prism.
+
+```{r}
+#| label: fig-boxplot
+#| fig-cap: "Flipper length by species with pairwise Wilcoxon tests and a global Kruskal–Wallis p-value."
+#| fig-width: 8
+#| fig-height: 6
+species_comparisons <- list(c("Adelie", "Chinstrap"),
+                            c("Chinstrap", "Gentoo"),
+                            c("Adelie", "Gentoo"))
+
+ggboxplot(penguins_clean, x = "species", y = "flipper_length_mm",
+          color = "species",
+          palette = npg_3,
+          add = "jitter", shape = "species",
+          xlab = "Species", ylab = "Flipper Length (mm)",
+          title = "Flipper Length Comparison Across Species") +
+  stat_compare_means(comparisons = species_comparisons) +
+  stat_compare_means(label.y = 240) +
+  theme_prism(base_size = 12) +
+  scale_y_continuous(guide = guide_prism_minor()) +
+  scale_x_discrete(guide = guide_prism_bracket(width = 0.15))
+```
+
+All pairwise differences are highly significant, with Gentoo penguins having the longest flippers.
+
+### Violin Plot with Nested Box Plot
+
+Violin plots reveal the full distribution shape while a nested box plot preserves familiar
+summary statistics. Bracket-style x-axis labels keep the categorical axis clean.
+
+```{r}
+#| label: fig-violin
+#| fig-cap: "Bill depth distributions shown as violins with embedded box plots. Significance stars from pairwise Wilcoxon tests."
+#| fig-width: 8
+#| fig-height: 6
+ggviolin(penguins_clean, x = "species", y = "bill_depth_mm",
+         fill = "species",
+         palette = npg_3,
+         add = "boxplot", add.params = list(fill = "white"),
+         xlab = "Species", ylab = "Bill Depth (mm)",
+         title = "Bill Depth Distribution with Statistical Tests") +
+  stat_compare_means(comparisons = species_comparisons, label = "p.signif") +
+  stat_compare_means(label.y = 25) +
+  theme_prism(base_size = 12) +
+  scale_y_continuous(guide = guide_prism_minor()) +
+  scale_x_discrete(guide = guide_prism_bracket(width = 0.15))
+```
+
+## Scatter Plots with Regression
+
+`ggscatter()` combines points, regression lines, confidence intervals, and correlation
+coefficients in a single call — useful for quickly assessing bivariate relationships across groups.
+Adding `guide_prism_minor()` to both axes gives the continuous scales a polished look.
+
+```{r}
+#| label: fig-scatter
+#| fig-cap: "Bill length versus body mass with per-species linear regression and Pearson correlation."
+#| fig-width: 8
+#| fig-height: 6
+ggscatter(penguins_clean, x = "bill_length_mm", y = "body_mass_g",
+          color = "species", shape = "species",
+          palette = npg_3,
+          add = "reg.line", conf.int = TRUE,
+          xlab = "Bill Length (mm)", ylab = "Body Mass (g)",
+          title = "Bill Length vs Body Mass with Linear Regression") +
+  stat_cor(aes(color = species), label.y = c(6200, 6000, 5800)) +
+  theme_prism(base_size = 12) +
+  scale_x_continuous(guide = guide_prism_minor()) +
+  scale_y_continuous(guide = guide_prism_minor())
+```
+
+Each species shows a positive relationship between bill length and body mass, though the
+slopes and correlation strengths differ.
+
+## Bar Plots
+
+### Ordered Bar Plot — Life Expectancy in the Americas
+
+Bar plots remain a staple of scientific communication. Sorting bars by value and colouring by
+a derived grouping variable makes patterns immediately apparent.
+
+```{r}
+#| label: fig-barplot
+#| fig-cap: "Life expectancy across countries in the Americas (2007), coloured by position relative to the regional median."
+#| fig-width: 10
+#| fig-height: 6
+americas_2007 <- gapminder |>
+  filter(continent == "Americas", year == 2007) |>
+  mutate(lifeExp_grp = factor(
+    ifelse(lifeExp < median(lifeExp), "Below Median", "Above Median"),
+    levels = c("Below Median", "Above Median")))
+
+ggbarplot(americas_2007, x = "country", y = "lifeExp",
+          fill = "lifeExp_grp",
+          color = "white",
+          palette = npg_2,
+          sort.val = "asc",
+          sort.by.groups = FALSE,
+          x.text.angle = 90,
+          xlab = FALSE,
+          ylab = "Life Expectancy (years)",
+          legend.title = "Group",
+          title = "Life Expectancy in the Americas (2007)") +
+  theme_prism(base_size = 11) +
+  scale_y_continuous(guide = guide_prism_minor()) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1))
+```
+
+### Deviation Plot — GDP per Capita in Europe
+
+Deviation plots highlight values above and below a reference point. Here we standardise GDP
+per capita to z-scores so that the zero line represents the European mean.
+
+```{r}
+#| label: fig-deviation
+#| fig-cap: "Z-scored GDP per capita across European countries (2007). Bars extend from the continental mean."
+#| fig-width: 8
+#| fig-height: 10
+europe_2007 <- gapminder |>
+  filter(continent == "Europe", year == 2007) |>
+  mutate(gdp_z = (gdpPercap - mean(gdpPercap)) / sd(gdpPercap),
+         gdp_grp = factor(
+           ifelse(gdp_z < 0, "Below Average", "Above Average"),
+           levels = c("Below Average", "Above Average")))
+
+ggbarplot(europe_2007, x = "country", y = "gdp_z",
+          fill = "gdp_grp",
+          color = "white",
+          palette = npg_2,
+          sort.val = "desc",
+          sort.by.groups = FALSE,
+          x.text.angle = 90,
+          ylab = "GDP per Capita (z-score)",
+          xlab = FALSE,
+          legend.title = "GDP Group",
+          title = "GDP per Capita Deviation in Europe (2007)",
+          rotate = TRUE,
+          ggtheme = theme_prism(base_size = 10))
+```
+
+Norway and Ireland stand out well above the continental average, while several Eastern European
+countries fall below.
+
+## Dot Charts
+
+### Lollipop Chart — GDP per Capita: Europe and the USA
+
+When there are many categories, lollipop charts reduce visual clutter compared to full bars
+while preserving rank and magnitude. Here the USA is highlighted alongside European nations
+for a transatlantic comparison.
+
+```{r}
+#| label: fig-lollipop
+#| fig-cap: "GDP per capita (thousands USD) across European countries and the USA in 2007."
+#| fig-width: 8
+#| fig-height: 12
+gdp_2007 <- gapminder |>
+  filter((continent == "Europe" | country == "United States"), year == 2007) |>
+  mutate(region = ifelse(country == "United States", "USA", "Europe"),
+         gdpPercap_k = round(gdpPercap / 1000, 1))
+
+ggdotchart(gdp_2007, x = "country", y = "gdpPercap_k",
+           color = "region",
+           palette = npg_2,
+           sorting = "ascending",
+           add = "segments",
+           rotate = TRUE,
+           group = "region",
+           dot.size = 4,
+           label = gdp_2007 |> arrange(gdpPercap_k) |> pull(gdpPercap_k),
+           font.label = list(color = "white", size = 6, vjust = 0.5),
+           xlab = FALSE, ylab = "GDP per Capita (thousands USD)",
+           title = "GDP per Capita: Europe and the USA (2007)",
+           ggtheme = theme_prism(base_size = 9))
+```
+
+Norway leads at \~49k USD, with the United States close behind. Several Eastern European
+countries sit at the lower end of the distribution.
+
+### Cleveland Dot Plot — Iris Sepal Length
+
+Cleveland dot plots order observations along one axis and use aligned dots for easy comparison.
+Colouring the y-axis labels by group reinforces the grouping.
+
+```{r}
+#| label: fig-cleveland
+#| fig-cap: "Top 10 sepal lengths within each iris species. Y-axis labels are colour-coded by species."
+#| fig-width: 8
+#| fig-height: 8
+iris_df <- iris |>
+  mutate(name = paste(Species, row_number(), sep = "_")) |>
+  group_by(Species) |>
+  slice_max(order_by = Sepal.Length, n = 10) |>
+  ungroup()
+
+ggdotchart(iris_df, x = "name", y = "Sepal.Length",
+           color = "Species",
+           palette = npg_3,
+           sorting = "descending",
+           rotate = TRUE,
+           dot.size = 3,
+           y.text.col = TRUE,
+           xlab = FALSE, ylab = "Sepal Length (cm)",
+           title = "Top 10 Sepal Lengths per Iris Species",
+           ggtheme = theme_prism(base_size = 11)) +
+  theme_cleveland()
+```
+
+## Multi-Panel Figures
+
+Journals frequently require composite figures. `ggarrange()` handles layout, shared legends,
+and panel labelling. Applying `theme_prism()` with `guide_prism_bracket()` to each sub-plot
+ensures consistent styling across panels.
+
+### Morphometrics by Island
+
+```{r}
+#| label: fig-multipanel
+#| fig-cap: "Mean body mass (A) and flipper length (B) by island, grouped by species. Error bars show ± 1 SE."
+#| fig-width: 12
+#| fig-height: 5
+p_mass <- ggbarplot(penguins_clean, x = "island", y = "body_mass_g",
+                    add = "mean_se", fill = "species",
+                    palette = npg_3,
+                    position = position_dodge(0.8),
+                    ylab = "Body Mass (g)", xlab = "Island") +
+  theme_prism(base_size = 11) +
+  scale_y_continuous(guide = guide_prism_minor()) +
+  scale_x_discrete(guide = guide_prism_bracket(width = 0.15))
+
+p_flip <- ggbarplot(penguins_clean, x = "island", y = "flipper_length_mm",
+                    add = "mean_se", fill = "species",
+                    palette = npg_3,
+                    position = position_dodge(0.8),
+                    ylab = "Flipper Length (mm)", xlab = "Island") +
+  theme_prism(base_size = 11) +
+  scale_y_continuous(guide = guide_prism_minor()) +
+  scale_x_discrete(guide = guide_prism_bracket(width = 0.15))
+
+combined <- ggarrange(p_mass, p_flip, ncol = 2,
+                      common.legend = TRUE, legend = "bottom",
+                      labels = c("A", "B"))
+annotate_figure(combined,
+                top = text_grob("Penguin Morphometrics by Island",
+                                face = "bold", size = 14))
+```
+
+Biscoe Island hosts all three species and shows the widest range of body sizes, driven
+primarily by the presence of Gentoo.
+
+## Faceted Plots
+
+Faceting splits data into panels by a grouping variable, making it easy to compare patterns
+across subsets without overplotting.
+
+```{r}
+#| label: fig-faceted
+#| fig-cap: "Body mass by sex within each species. Significance stars from Wilcoxon tests."
+#| fig-width: 10
+#| fig-height: 5
+ggboxplot(penguins_clean, x = "sex", y = "body_mass_g",
+          color = "sex", palette = npg_2,
+          facet.by = "species",
+          xlab = "Sex", ylab = "Body Mass (g)",
+          title = "Body Mass by Sex Across Penguin Species") +
+  stat_compare_means(label = "p.signif") +
+  theme_prism(base_size = 12) +
+  scale_y_continuous(guide = guide_prism_minor()) +
+  scale_x_discrete(guide = guide_prism_bracket(width = 0.2))
+```
+
+Males are significantly heavier than females in all three species, with the largest dimorphism
+in Gentoo.
+
+## Summary
+
+This report covered the following ggpubr + ggprism capabilities:
+
+| Technique | Function(s) | ggprism Enhancement |
+|-----------|-------------|---------------------|
+| Density plots | `ggdensity()` | `theme_prism()`, minor tick guides |
+| Histograms | `gghistogram()` | `theme_prism()`, minor tick guides |
+| Box plots + stats | `ggboxplot()` + `stat_compare_means()` | `theme_prism()`, bracket axis, minor tick guides |
+| Violin plots | `ggviolin()` | `theme_prism()`, bracket axis, minor tick guides |
+| Scatter + regression | `ggscatter()` + `stat_cor()` | `theme_prism()`, minor tick guides on both axes |
+| Ordered bar plots | `ggbarplot()` | `theme_prism()`, minor tick guides |
+| Deviation plots | `ggbarplot()` | `theme_prism()` |
+| Lollipop charts | `ggdotchart()` | `theme_prism()` |
+| Cleveland dot plots | `ggdotchart()` + `theme_cleveland()` | `theme_prism()` |
+| Multi-panel figures | `ggarrange()` + `annotate_figure()` | `theme_prism()`, bracket axis, minor tick guides |
+| Faceting | `facet.by` argument | `theme_prism()`, bracket axis, minor tick guides |
+
+All figures use the **NPG (Nature Publishing Group)** colour palette and were generated from
+publicly available datasets with no manual data manipulation beyond filtering and standardisation.
+Each plot type can be further customised through standard ggplot2 layers or `ggpar()`.
