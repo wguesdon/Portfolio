@@ -93,6 +93,15 @@ Ideas/
 # Large HTML reports
 Bioinformatics/Microbial_Strain_Analysis/Output/eda_report.html
 
+# Logs and TensorBoard
+*.log
+**/catboost_info/
+*.tfevents
+
+# Kaggle submission models
+**/kaggle_submission/dataset/*.cbm
+**/kaggle_submission/dataset/*.txt
+
 # R build artifacts
 **/renv/
 **/.Rproj.user/
