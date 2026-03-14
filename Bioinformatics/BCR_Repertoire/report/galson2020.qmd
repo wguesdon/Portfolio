@@ -1,0 +1,354 @@
+---
+title: "COVID-19 BCR Repertoire Analysis"
+subtitle: "Deep sequencing of B cell receptor heavy chains in mild and severe COVID-19 patients"
+author: "Will Gammerdinger"
+date: last-modified
+date-format: "MMMM D, YYYY"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-title: "Contents"
+    toc-location: left
+    number-sections: true
+    code-fold: true
+    code-tools: true
+    code-summary: "Show code"
+    embed-resources: true
+    fig-align: center
+    fig-width: 8
+    fig-height: 5
+    df-print: kable
+
+execute:
+  echo: false
+  warning: false
+  message: false
+
+knitr:
+  opts_chunk:
+    out.width: "100%"
+
+bibliography: references.bib
+---
+
+```{r setup}
+library(readr)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(patchwork)
+library(scales)
+library(knitr)
+
+RESULTS_DIR <- "../results/airrflow/galson2020"
+REPS_DIR    <- file.path(RESULTS_DIR, "repertoire_comparison/repertoires")
+PLOTS_DIR   <- "../analysis/plots"
+FUNNEL_FILE <- file.path(RESULTS_DIR,
+                 "repertoire_comparison/Sequence_numbers_summary",
+                 "Table_sequences_assembly.tsv")
+
+# Load repertoires
+rep_files <- list.files(REPS_DIR, pattern = "*__clone-pass.tsv", full.names = TRUE)
+reps <- lapply(rep_files, read_tsv,
+               col_types = cols(
+                 v_call            = col_character(),
+                 j_call            = col_character(),
+                 junction_length   = col_double(),
+                 clone_id          = col_character(),
+                 clone_size_count  = col_double(),
+                 clone_size_freq   = col_double(),
+                 mu_freq           = col_double(),
+                 isotype           = col_character(),
+                 disease_diagnosis = col_character(),
+                 subject_id        = col_character(),
+                 sample_id         = col_character(),
+                 .default          = col_character()
+               ),
+               show_col_types = FALSE)
+db <- bind_rows(reps)
+
+extract_vgene <- function(x, level = c("family", "gene")) {
+  level <- match.arg(level)
+  primary <- str_extract(x, "^[^,]+")
+  gene    <- str_replace(primary, "\\*.*", "")
+  if (level == "gene") return(gene)
+  str_extract(gene, "^IGHV[0-9]+")
+}
+
+db <- db |>
+  mutate(
+    condition   = factor(disease_diagnosis,
+                         levels = c("COVID19_Mild", "COVID19_Severe"),
+                         labels = c("Mild", "Severe")),
+    subject     = factor(subject_id,
+                         levels = c("COV_M01","COV_M02","COV_M03","COV_S01","COV_S02")),
+    v_family    = extract_vgene(v_call, "family"),
+    v_gene      = extract_vgene(v_call, "gene"),
+    cdr3_aa_len = as.integer(junction_length) %/% 3L,
+    isotype_grp = case_when(
+      str_detect(isotype, "^IGHG") ~ "IgG",
+      str_detect(isotype, "^IGHA") ~ "IgA",
+      isotype == "IGHM"            ~ "IgM",
+      isotype == "IGHD"            ~ "IgD",
+      isotype == "IGHE"            ~ "IgE",
+      TRUE                         ~ "Unknown"
+    ) |> factor(levels = c("IgM", "IgD", "IgG", "IgA", "IgE", "Unknown")),
+    mu_pct = as.numeric(mu_freq) * 100
+  )
+
+theme_bcr <- function(base_size = 11) {
+  theme_classic(base_size = base_size) +
+    theme(
+      strip.background   = element_blank(),
+      strip.text         = element_text(face = "bold"),
+      legend.position    = "right",
+      panel.grid.major.y = element_line(colour = "grey92", linewidth = 0.3),
+      plot.title         = element_text(face = "bold", size = base_size + 1),
+      plot.subtitle      = element_text(colour = "grey40", size = base_size - 1)
+    )
+}
+
+COND_FILL <- c(Mild = "#2171B5", Severe = "#CB181D")
+```
+
+## Background
+
+Severe COVID-19 disease triggers a rapid and potent antibody response, yet the cellular and molecular determinants of protective versus pathological immunity remain incompletely understood. B cell receptor (BCR) sequencing provides a window into this response at single-sequence resolution, capturing the clonal structure, antigen-binding diversity, and isotype landscape of the antibody repertoire.
+
+This report analyses a subset of the dataset published by **Galson et al. (2020)** [@galson2020], who performed deep BCR sequencing of peripheral blood mononuclear cells (PBMCs) from hospitalised COVID-19 patients at St Bartholomew's Hospital, London. We focus on six patients — three with mild/moderate disease (no ICU admission) and three with severe/critical disease (ICU admission or intubation) — sequenced with the NEBNext Immune Sequencing Kit targeting the IgG heavy chain (IGH) locus.
+
+> **Note:** Patient COV_S03 (SRR11961719) was excluded from clonal and repertoire-comparison analyses because all 21 productive sequences had quality-masked CDR3 junctions (N-characters introduced by pRESTO's quality-based masking). These sequences cannot be reliably assigned to clones, so this sample is retained only in the sequence processing summary.
+
+## Data & Methods
+
+### Dataset
+
+```{r dataset-table}
+meta <- tibble::tribble(
+  ~Patient,   ~SRR,           ~Severity, ~Sex, ~Age,
+  "COV_M01", "SRR11961714",  "Mild",    "M",  39.0,
+  "COV_M02", "SRR11961723",  "Mild",    "M",  49.4,
+  "COV_M03", "SRR11961727",  "Mild",    "M",  39.6,
+  "COV_S01", "SRR11961711",  "Severe",  "M",  76.3,
+  "COV_S02", "SRR11961718",  "Severe",  "M",  40.1,
+  "COV_S03", "SRR11961719",  "Severe†", "M",  37.2
+)
+kable(meta, caption = "† Excluded from repertoire analysis: all CDR3 junctions quality-masked.")
+```
+
+### Pipeline
+
+Raw paired-end FASTQ files were downloaded from SRA (PRJNA638224) and processed end-to-end using **nf-core/airrflow v4.1.0** [@nfcore_airrflow] on AWS Batch (Spot instances; `c5`/`m5` instance families), with Fusion FUSE-mounting S3 via Seqera Wave.
+
+The pipeline executed the following major steps:
+
+| Stage | Tool | Purpose |
+|-------|------|---------|
+| Read QC | fastp | Adapter trimming, quality filtering |
+| UMI extraction | pRESTO | UMI-based consensus building |
+| Primer masking | pRESTO MaskPrimers | C-primer (R1) + TSO/linker (R2) |
+| Sequence assembly | pRESTO AssemblePairs | Sequential overlap assembly |
+| C-region tagging | pRESTO AlignSets | Internal C-region primer alignment |
+| V(D)J annotation | IgBLAST + Change-O | IMGT germline assignment |
+| Quality filtering | Alakazam | Productive, junction-mod3 |
+| Chimera removal | pRESTO | SplitSeq chimera filter |
+| Deduplication | pRESTO CollapseSeq | UMI-collapsed unique sequences |
+| Clonal threshold | SHazaM | Nearest-neighbour distance (auto) |
+| Clonal assignment | SCOPer hierarchicalClones | Single-linkage, threshold = 0.075 |
+
+Protocol parameters (from the NEBNext Immune Sequencing Kit): 5′-RACE with UMI (17 nt at R2 start); C-primer on R1; `dt_5p_race_umi` library generation mode.
+
+## Results
+
+### Sequence processing
+
+```{r fig1, fig.cap="Sequence attrition through the nf-core/airrflow pipeline. Each line represents one patient, coloured by disease severity. The steep drop from 'Pair UMIs' to 'Build consensus' reflects UMI-based error correction collapsing many raw reads into fewer high-confidence consensus sequences."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig1_funnel.png"))
+```
+
+```{r funnel-table}
+funnel_raw <- read_tsv(FUNNEL_FILE, show_col_types = FALSE)
+funnel_raw |>
+  filter(subject_id != "COV_S03") |>
+  select(Patient = subject_id, Severity = disease_diagnosis,
+         `Raw reads` = Sequences_R1,
+         `After QC` = Filtered_quality_R1,
+         `Consensus` = Build_consensus,
+         `Assembled` = Assemble_pairs,
+         `Unique`    = Unique,
+         `IgBLAST`   = Igblast) |>
+  mutate(Severity = str_remove(Severity, "COVID19_")) |>
+  kable(format.args = list(big.mark = ","),
+        caption = "Sequence counts at key processing steps.")
+```
+
+Across the five analysable samples, raw read counts ranged from ~196k (COV_S02) to ~1.5M (COV_S01). After UMI consensus building, assembly, deduplication, and IgBLAST annotation, each sample yielded **162–299 productive IGH sequences** that passed all quality filters.
+
+### V gene usage
+
+```{r fig2, fig.cap="IGHV gene family usage frequencies in mild (blue) and severe (red) COVID-19 patients. Frequencies are pooled across patients within each severity group."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig2_vgene_family.png"))
+```
+
+```{r fig3, fig.cap="Top 15 IGHV gene usage per patient. Bubble size indicates the frequency of that gene within the patient's repertoire. Patients are grouped by severity."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig3_vgene_gene.png"))
+```
+
+```{r vgene-table}
+db |>
+  filter(!is.na(v_family)) |>
+  count(condition, v_family) |>
+  group_by(condition) |>
+  mutate(freq = round(n / sum(n) * 100, 1)) |>
+  ungroup() |>
+  pivot_wider(names_from = condition, values_from = c(n, freq),
+              values_fill = 0) |>
+  arrange(desc(freq_Mild)) |>
+  select(Family = v_family,
+         `Mild (n)`   = n_Mild,    `Mild (%)`   = freq_Mild,
+         `Severe (n)` = n_Severe,  `Severe (%)` = freq_Severe) |>
+  kable(caption = "IGHV family usage by disease severity.")
+```
+
+The IGHV3 family dominates in both severity groups, consistent with the known prevalence of IGHV3-53 and IGHV3-66 in COVID-19 anti-spike antibody responses [@galson2020; @yuan2020]. IGHV4 and IGHV1 contribute measurable fractions in both groups, with minor differences between mild and severe patients — though the small cohort size (n = 5) limits statistical inference.
+
+### CDR3 length distribution
+
+```{r fig4, fig.cap="Distribution of IGHV CDR3 amino acid lengths (junction_length / 3). Dashed lines indicate the per-group median."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig4_cdr3_length.png"))
+```
+
+```{r cdr3-stats}
+db |>
+  filter(!is.na(cdr3_aa_len), cdr3_aa_len >= 5, cdr3_aa_len <= 35) |>
+  group_by(Severity = condition) |>
+  summarise(
+    n      = n(),
+    Median = median(cdr3_aa_len),
+    Mean   = round(mean(cdr3_aa_len), 1),
+    SD     = round(sd(cdr3_aa_len), 1),
+    Min    = min(cdr3_aa_len),
+    Max    = max(cdr3_aa_len)
+  ) |>
+  kable(caption = "CDR3 length summary statistics (amino acids).")
+```
+
+CDR3 lengths are broadly comparable between mild and severe patients, centred around 14–16 amino acids — typical for human IGH. Any differences in CDR3 length distribution would require a larger cohort for reliable detection.
+
+### Isotype distribution
+
+```{r fig5, fig.cap="Isotype composition per patient, based on C-region primer alignment by pRESTO. Samples are faceted by disease severity."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig5_isotype.png"))
+```
+
+```{r isotype-table}
+db |>
+  filter(isotype_grp != "Unknown") |>
+  count(Severity = condition, Isotype = isotype_grp) |>
+  group_by(Severity) |>
+  mutate(Freq = round(n / sum(n) * 100, 1)) |>
+  ungroup() |>
+  pivot_wider(names_from = Severity, values_from = c(n, Freq), values_fill = 0) |>
+  select(Isotype,
+         `Mild (n)`   = n_Mild,    `Mild (%)`   = Freq_Mild,
+         `Severe (n)` = n_Severe,  `Severe (%)` = Freq_Severe) |>
+  kable(caption = "Isotype distribution by disease severity.")
+```
+
+All five patients show a mixed IgA/IgM repertoire in these IGH-targeted sequences. The absence of IgG sequences in most patients likely reflects that the NEBNext kit C-primer panel — while nominally IgG-targeting — captures internal C-region reads that can span IgM and IgA constant regions when using the AbSeq internal C-region panel. IgA, the dominant mucosal isotype, predominates in mild patients; IgM prevalence in severe patients may reflect an earlier-stage or less class-switched response, consistent with prior reports of delayed germinal centre reactions in severe COVID-19 [@kaneko2020].
+
+### Clonal expansion
+
+```{r fig6, fig.cap="Left: clone size rank plot (all clones per patient, ranked by size). Right: percentage of clones that are expanded (size ≥ 2 sequences)."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig6_clonal.png"))
+```
+
+```{r clone-table}
+clone_df <- db |>
+  distinct(subject, condition, clone_id, clone_size_count) |>
+  filter(!is.na(clone_id))
+
+clone_df |>
+  group_by(Patient = subject, Severity = condition) |>
+  summarise(
+    `Total clones`    = n(),
+    `Expanded (≥2)`   = sum(clone_size_count >= 2),
+    `% expanded`      = round(mean(clone_size_count >= 2) * 100, 1),
+    `Largest clone`   = max(clone_size_count),
+    .groups = "drop"
+  ) |>
+  kable(caption = "Clonal expansion summary. Clonal threshold = 0.075 (auto-estimated).")
+```
+
+Clonal expansion — indicating antigen-driven clonal selection — was detected in all five patients. The clonal threshold was automatically estimated at **0.075** from the inter-sequence nearest-neighbour distance distribution. Most clones are singletons (single sequence), with a minority of expanded clones (2–3 sequences) per patient. COV_S01 (severe, age 76) shows the highest fraction of expanded clones, suggesting more robust or prolonged antigen exposure.
+
+### Somatic hypermutation
+
+```{r fig7, fig.cap="Somatic hypermutation (SHM) frequency in V genes by isotype and disease severity. Each point represents one sequence; boxes show the interquartile range."}
+knitr::include_graphics(file.path(PLOTS_DIR, "fig7_shm.png"))
+```
+
+```{r shm-table}
+db |>
+  filter(!is.na(mu_pct), isotype_grp %in% c("IgM", "IgG", "IgA")) |>
+  group_by(Severity = condition, Isotype = isotype_grp) |>
+  summarise(
+    n      = n(),
+    Median = round(median(mu_pct), 2),
+    Mean   = round(mean(mu_pct), 2),
+    SD     = round(sd(mu_pct), 2),
+    .groups = "drop"
+  ) |>
+  kable(caption = "SHM frequency (%) by severity and isotype.")
+```
+
+SHM frequencies are broadly consistent across severity groups and isotypes, ranging from ~2–6%. IgA sequences show somewhat higher median SHM than IgM sequences, consistent with IgA being a class-switched, germinal-centre-derived isotype. Detecting significant differences in SHM levels would require a substantially larger cohort.
+
+## Discussion
+
+This analysis demonstrates a complete BCR repertoire workflow — from raw FASTQ to clonal assignment — applied to a small but informative COVID-19 patient cohort. Key observations:
+
+1. **Repertoire depth is moderate after UMI correction.** Raw read counts of up to 1.5 million collapse to 162–299 productive IGH sequences per patient after UMI-based error correction and deduplication. This is expected for the NEBNext 5′-RACE UMI protocol, where sequencing depth is "wasted" on PCR amplification of the same UMI molecule.
+
+2. **IGHV3 family dominates** across severity groups. IGHV3-23 and IGHV3-30 are among the most frequent genes — both well-represented in the COVID-19 convergent antibody response [@galson2020].
+
+3. **Isotype composition is predominantly IgA and IgM.** The C-region tagging captures both isotypes from the internal primer panel. A trend toward higher IgA in mild patients and higher IgM in severe patients may reflect differential B cell maturation, though this cannot be confirmed with n = 5.
+
+4. **Clonal expansion is modest but present.** Maximum clone sizes of 2–3 sequences are expected given the deep-but-UMI-collapsed nature of this data. COV_S03 (severe) could not be included due to pervasive CDR3 quality masking, representing a known limitation of aggressive N-masking in regions of low local quality.
+
+5. **SHM levels are unremarkable.** Both mild and severe patients show typical SHM frequencies for peripheral blood B cells, with no obvious differences detectable at this sample size.
+
+### Limitations
+
+- **Small n = 5 (effectively n = 2 severe)**: statistical comparisons between severity groups are underpowered. The findings are descriptive.
+- **COV_S03 excluded**: all 21 productive sequences had N-masked CDR3 junctions, indicating poor sequencing quality in the junction region for this sample.
+- **Single time point**: only the acute infection phase was sampled. Longitudinal data would be needed to track repertoire evolution.
+- **IGH only**: heavy chain sequencing alone cannot determine BCR pairing with light chains or full B cell identity.
+
+## Reproducibility
+
+All analyses were performed with publicly available tools. The complete workflow is available at this project's repository.
+
+| Component | Version |
+|-----------|---------|
+| nf-core/airrflow | 4.1.0 |
+| pRESTO | 0.7.2 |
+| IgBLAST | 1.21.0 |
+| Alakazam / SHazaM / SCOPer | 1.3.0 / 1.1.2 / 1.3.0 |
+| Enchantr | 0.1.11 |
+| R | 4.3.x |
+| Container | immcantation/airrflow:4.1.0 |
+| AWS Batch | Spot; c5/m5; Fusion FUSE |
+
+```{r session-info}
+sessionInfo()
+```
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

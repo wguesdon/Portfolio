@@ -1,0 +1,7 @@
+data/galson2020/fastq/
+data/galson2020/samplesheet.csv
+data/galson2020/samplesheet_s3.csv
+results/airrflow/
+work/
+.nextflow/
+.nextflow.log*
