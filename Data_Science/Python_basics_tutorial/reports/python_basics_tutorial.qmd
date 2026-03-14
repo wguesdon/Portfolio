@@ -1,0 +1,1643 @@
+---
+title: "Python Basics for Data Science"
+subtitle: "From Variables to Statistical Analysis with Pandas, Matplotlib, and Scikit-learn"
+author: "Portfolio 2026"
+date: today
+format:
+  html:
+    theme: flatly
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    code-tools: true
+    embed-resources: true
+    fig-align: center
+jupyter: python3
+execute:
+  warning: false
+---
+
+# Part 1: Python Fundamentals
+
+## 1.1 Variables and Data Types
+
+Python is dynamically typed — you do not declare types explicitly.
+
+```{python}
+#| label: variables-basics
+
+# Assignment
+gene_name = "BRCA1"
+expression_value = 42.7
+is_upregulated = True
+sample_count = 6
+
+# Check types
+print(type(gene_name))       # <class 'str'>
+print(type(expression_value)) # <class 'float'>
+print(type(is_upregulated))   # <class 'bool'>
+print(type(sample_count))     # <class 'int'>
+```
+
+### Numeric Types
+
+```{python}
+#| label: numeric-types
+
+# Integers have arbitrary precision
+large_genome = 3_000_000_000  # underscores for readability
+print(large_genome)
+
+# Float arithmetic
+print(0.1 + 0.2)             # floating-point caveat: 0.30000000000000004
+
+# Integer division vs true division
+print(7 // 2)                # 3  (floor division)
+print(7 / 2)                 # 3.5
+print(7 % 2)                 # 1  (modulo)
+print(2 ** 10)               # 1024 (exponentiation)
+```
+
+### Strings
+
+```{python}
+#| label: strings
+
+sequence = "ATGCGCTA"
+
+# String methods
+print(sequence.lower())
+print(sequence.count("GC"))
+print(sequence.replace("A", "U"))  # DNA → RNA (simplified)
+print(len(sequence))
+
+# f-strings (formatted string literals)
+gc_count = sequence.count("G") + sequence.count("C")
+gc_pct = gc_count / len(sequence) * 100
+print(f"GC content: {gc_pct:.1f}%")
+
+# Slicing
+print(sequence[0:3])         # first codon: ATG
+print(sequence[-3:])         # last codon: CTA
+print(sequence[::-1])        # reverse: ATCGCGTA
+```
+
+### Special Values
+
+```{python}
+#| label: special-values
+
+import math
+
+print(None)                  # Python's null
+print(float("nan"))          # NaN
+print(float("inf"))          # Infinity
+print(math.isnan(float("nan")))
+print(math.isinf(float("inf")))
+
+# None checks
+x = None
+print(x is None)             # always use 'is', not '=='
+```
+
+### Type Conversion
+
+```{python}
+#| label: type-conversion
+
+print(int("42"))
+print(float("3.14"))
+print(str(100))
+print(bool(0))               # False
+print(bool("non-empty"))     # True
+print(bool([]))              # False (empty container)
+print(bool([1]))             # True
+```
+
+## 1.2 Lists
+
+Lists are ordered, mutable collections that can hold mixed types.
+
+```{python}
+#| label: lists
+
+gene_lengths = [1863, 5592, 2487, 945, 3210]
+samples = ["ctrl_1", "ctrl_2", "treat_1", "treat_2"]
+
+# Indexing (0-based)
+print(gene_lengths[0])       # first: 1863
+print(gene_lengths[-1])      # last: 3210
+print(gene_lengths[1:3])     # slice: [5592, 2487]
+
+# Modify in place
+gene_lengths.append(4100)
+gene_lengths.extend([720, 1340])
+gene_lengths.sort()
+print(gene_lengths)
+
+# List comprehension — the Pythonic way
+lengths_kb = [g / 1000 for g in gene_lengths]
+print(lengths_kb)
+
+# Filtered comprehension
+long_genes = [g for g in gene_lengths if g > 2000]
+print(long_genes)
+```
+
+### Useful List Operations
+
+```{python}
+#| label: list-operations
+
+nums = [10, 20, 30, 40, 50]
+
+print(len(nums))
+print(sum(nums))
+print(min(nums), max(nums))
+print(sorted(nums, reverse=True))
+
+# Enumerate — get index and value
+for i, val in enumerate(nums):
+    print(f"  Index {i}: {val}")
+
+# Zip — pair elements from two lists
+genes = ["BRCA1", "TP53", "MYC"]
+pvals = [0.001, 0.05, 0.0003]
+for gene, p in zip(genes, pvals):
+    print(f"  {gene}: p={p}")
+```
+
+## 1.3 Tuples
+
+Tuples are immutable sequences — use them for fixed collections and
+as dictionary keys.
+
+```{python}
+#| label: tuples
+
+coordinates = (17, 43044295, 43170245)  # chr, start, end
+chrom, start, end = coordinates          # unpacking
+print(f"Chromosome {chrom}: {start:,}-{end:,}")
+
+# Tuples are immutable
+# coordinates[0] = 1  # would raise TypeError
+```
+
+## 1.4 Dictionaries
+
+Dictionaries store key-value pairs with O(1) lookup.
+
+```{python}
+#| label: dicts
+
+gene_info = {
+    "name": "BRCA1",
+    "chromosome": "chr17",
+    "length": 81189,
+    "biotype": "protein_coding",
+}
+
+# Access
+print(gene_info["name"])
+print(gene_info.get("strand", "unknown"))  # default if missing
+
+# Modify
+gene_info["strand"] = "+"
+gene_info["length"] = 81189
+
+# Iterate
+for key, value in gene_info.items():
+    print(f"  {key}: {value}")
+
+# Dictionary comprehension
+expression = {"BRCA1": 12.3, "TP53": 8.7, "MYC": 45.1, "EGFR": 22.0}
+high_expr = {g: v for g, v in expression.items() if v > 15}
+print(high_expr)
+```
+
+## 1.5 Sets
+
+Sets are unordered collections of unique elements — useful for membership
+testing and set operations on gene lists.
+
+```{python}
+#| label: sets
+
+deg_up = {"BRCA1", "MYC", "EGFR", "KRAS"}
+deg_down = {"TP53", "RB1", "MYC", "APC"}
+
+print(deg_up & deg_down)     # intersection
+print(deg_up | deg_down)     # union
+print(deg_up - deg_down)     # difference
+print("BRCA1" in deg_up)     # membership test: O(1)
+```
+
+## 1.6 Control Flow
+
+### Conditionals
+
+```{python}
+#| label: conditionals
+
+pvalue = 0.03
+
+if pvalue < 0.001:
+    significance = "***"
+elif pvalue < 0.01:
+    significance = "**"
+elif pvalue < 0.05:
+    significance = "*"
+else:
+    significance = "ns"
+
+print(f"p = {pvalue} → {significance}")
+
+# Ternary expression
+direction = "up" if 2.1 > 0 else "down"
+print(direction)
+```
+
+### Loops
+
+```{python}
+#| label: loops
+
+# For loop
+genes = ["BRCA1", "TP53", "MYC"]
+for gene in genes:
+    print(f"Processing: {gene}")
+
+# While loop with break
+import random
+random.seed(42)
+attempts = 0
+while True:
+    val = random.random()
+    attempts += 1
+    if val > 0.95:
+        break
+print(f"Took {attempts} attempts to exceed 0.95")
+
+# continue — skip an iteration
+for i in range(10):
+    if i % 2 == 0:
+        continue
+    print(i, end=" ")
+print()
+```
+
+## 1.7 Functions
+
+```{python}
+#| label: functions
+
+def gc_content(sequence: str) -> float:
+    """Calculate the GC content of a DNA sequence.
+
+    Args:
+        sequence: A string of DNA bases (A, T, G, C).
+
+    Returns:
+        The fraction of G and C bases in the sequence.
+    """
+    seq = sequence.upper()
+    gc = seq.count("G") + seq.count("C")
+    return gc / len(seq)
+
+print(gc_content("ATGCGCTA"))
+print(gc_content("AAATTTAAA"))
+```
+
+### Default Arguments and *args/**kwargs
+
+```{python}
+#| label: functions-advanced
+
+def normalize(values: list[float], method: str = "zscore") -> list[float]:
+    """Normalize a list of values.
+
+    Args:
+        values: Numeric values to normalize.
+        method: Normalization method — 'zscore' or 'minmax'.
+
+    Returns:
+        Normalized values as a list.
+    """
+    import statistics
+
+    if method == "zscore":
+        mu = statistics.mean(values)
+        sigma = statistics.stdev(values)
+        return [(x - mu) / sigma for x in values]
+    elif method == "minmax":
+        lo, hi = min(values), max(values)
+        return [(x - lo) / (hi - lo) for x in values]
+    else:
+        raise ValueError(f"Unknown method: {method}")
+
+vals = [10, 20, 30, 40, 50]
+print(normalize(vals))
+print(normalize(vals, method="minmax"))
+```
+
+### Lambda Functions
+
+```{python}
+#| label: lambdas
+
+# Short anonymous functions
+sequences = ["ATG", "GCGC", "AATT", "TTTTTTT"]
+sorted_by_length = sorted(sequences, key=lambda s: len(s))
+print(sorted_by_length)
+
+# Map + lambda
+lengths = list(map(lambda s: len(s), sequences))
+print(lengths)
+```
+
+## 1.8 Error Handling
+
+```{python}
+#| label: error-handling
+
+def safe_divide(a: float, b: float) -> float | None:
+    """Divide a by b, returning None on error.
+
+    Args:
+        a: Numerator.
+        b: Denominator.
+
+    Returns:
+        Result of division, or None if b is zero.
+    """
+    try:
+        return a / b
+    except ZeroDivisionError:
+        print("Warning: division by zero")
+        return None
+
+print(safe_divide(10, 3))
+print(safe_divide(10, 0))
+```
+
+## 1.9 Object-Oriented Programming
+
+Python is an object-oriented language — everything is an object. Classes let you
+bundle data and behaviour together, which is useful for representing biological
+entities or building reusable analysis tools.
+
+### Defining a Class
+
+```{python}
+#| label: oop-basics
+
+class Gene:
+    """Represents a gene with basic annotation.
+
+    Attributes:
+        name: Gene symbol.
+        chromosome: Chromosome location.
+        start: Start position (1-based).
+        end: End position (1-based).
+        strand: Strand ('+' or '-').
+    """
+
+    def __init__(self, name: str, chromosome: str, start: int, end: int, strand: str = "+"):
+        self.name = name
+        self.chromosome = chromosome
+        self.start = start
+        self.end = end
+        self.strand = strand
+
+    @property
+    def length(self) -> int:
+        """Length of the gene in base pairs."""
+        return self.end - self.start + 1
+
+    def __repr__(self) -> str:
+        return f"Gene({self.name}, {self.chromosome}:{self.start}-{self.end})"
+
+    def __len__(self) -> int:
+        return self.length
+
+
+brca1 = Gene("BRCA1", "chr17", 43044295, 43170245, strand="-")
+print(brca1)
+print(f"Length: {brca1.length:,} bp")
+print(f"len(): {len(brca1):,}")
+```
+
+### Inheritance
+
+```{python}
+#| label: oop-inheritance
+
+class CodingGene(Gene):
+    """A protein-coding gene with transcript information.
+
+    Attributes:
+        n_exons: Number of exons.
+        protein_id: Associated protein accession.
+    """
+
+    def __init__(self, name, chromosome, start, end, strand="+",
+                 n_exons: int = 1, protein_id: str | None = None):
+        super().__init__(name, chromosome, start, end, strand)
+        self.n_exons = n_exons
+        self.protein_id = protein_id
+
+    def __repr__(self) -> str:
+        return f"CodingGene({self.name}, exons={self.n_exons})"
+
+
+tp53 = CodingGene("TP53", "chr17", 7668402, 7687550, strand="-",
+                   n_exons=11, protein_id="P04637")
+print(tp53)
+print(f"Exons: {tp53.n_exons}")
+print(f"Protein: {tp53.protein_id}")
+print(f"Length: {tp53.length:,} bp")  # inherited property
+```
+
+### Dataclasses
+
+For simple data containers, Python's `dataclasses` module removes boilerplate:
+
+```{python}
+#| label: oop-dataclass
+
+from dataclasses import dataclass
+
+@dataclass
+class Sample:
+    """A biological sample.
+
+    Attributes:
+        sample_id: Unique identifier.
+        group: Experimental group.
+        rin_score: RNA Integrity Number.
+        reads: Number of sequenced reads.
+    """
+
+    sample_id: str
+    group: str
+    rin_score: float
+    reads: int = 0
+
+s1 = Sample("S1", "control", rin_score=8.5, reads=30_000_000)
+s2 = Sample("S2", "treatment", rin_score=7.9)
+print(s1)
+print(s2)
+print(s1 == s2)              # auto-generated __eq__
+```
+
+> **When to use classes**: Prefer classes when you have data + behaviour that
+> belongs together (e.g., a `Pipeline` with `.run()` steps). For pure tabular
+> data, stick with Pandas DataFrames.
+
+## 1.10 File I/O
+
+```{python}
+#| label: file-io
+
+import tempfile
+import os
+
+tmp = tempfile.mkdtemp()
+
+# Write a FASTA file
+fasta_path = os.path.join(tmp, "sequences.fasta")
+with open(fasta_path, "w") as f:
+    f.write(">gene1\nATGCGCTA\n")
+    f.write(">gene2\nGGGCCCAA\n")
+
+# Read it back
+with open(fasta_path) as f:
+    for line in f:
+        print(line.strip())
+```
+
+
+# Part 2: NumPy — Numerical Computing
+
+```{python}
+#| label: numpy-setup
+
+import numpy as np
+```
+
+## 2.1 Arrays
+
+NumPy arrays are the foundation for scientific computing in Python. Unlike
+lists, they support vectorised operations and have a fixed data type.
+
+```{python}
+#| label: numpy-arrays
+
+# Create arrays
+a = np.array([1, 2, 3, 4, 5])
+print(a.dtype, a.shape)
+
+# From ranges
+b = np.arange(0, 10, 2)
+print(b)
+
+c = np.linspace(0, 1, 5)
+print(c)
+
+# Special arrays
+print(np.zeros(3))
+print(np.ones((2, 3)))
+print(np.eye(3))
+
+# Random
+rng = np.random.default_rng(42)
+print(rng.normal(loc=0, scale=1, size=5))
+```
+
+## 2.2 Vectorised Operations
+
+```{python}
+#| label: numpy-vectorised
+
+expression = np.array([5.2, 3.1, 8.4, 6.7, 2.0])
+
+# Arithmetic operates element-wise
+print(expression * 2)
+print(np.log2(expression))
+print(expression > 5)         # boolean array
+
+# Aggregation
+print(f"Mean: {expression.mean():.2f}")
+print(f"Std:  {expression.std():.2f}")
+print(f"Max index: {expression.argmax()}")
+```
+
+## 2.3 Indexing and Slicing
+
+```{python}
+#| label: numpy-indexing
+
+# 2D array (gene expression matrix)
+expr_mat = rng.normal(loc=10, scale=3, size=(4, 5))
+print("Shape:", expr_mat.shape)
+print(expr_mat.round(2))
+
+# Row/column slicing
+print("\nFirst row:", expr_mat[0, :].round(2))
+print("First column:", expr_mat[:, 0].round(2))
+print("Sub-matrix (2×3):\n", expr_mat[:2, :3].round(2))
+
+# Boolean indexing
+high_vals = expr_mat[expr_mat > 12]
+print(f"\nValues > 12: {high_vals.round(2)}")
+```
+
+## 2.4 Reshaping and Stacking
+
+```{python}
+#| label: numpy-reshape
+
+a = np.arange(12)
+print(a.reshape(3, 4))
+print(a.reshape(3, 4).T)     # transpose
+
+# Stacking arrays
+x = np.array([1, 2, 3])
+y = np.array([4, 5, 6])
+print(np.vstack([x, y]))     # vertical
+print(np.hstack([x, y]))     # horizontal
+print(np.column_stack([x, y]))
+```
+
+
+# Part 3: Pandas — Data Wrangling
+
+```{python}
+#| label: pandas-setup
+
+import pandas as pd
+from palmerpenguins import load_penguins
+
+penguins = load_penguins().dropna()
+penguins.head()
+```
+
+## 3.1 Creating and Reading DataFrames
+
+### Create from Scratch
+
+```{python}
+#| label: create-df
+
+samples_df = pd.DataFrame({
+    "sample_id": [f"S{i}" for i in range(1, 7)],
+    "group": ["ctrl"] * 3 + ["treat"] * 3,
+    "rin_score": [8.2, 7.9, 8.5, 7.1, 8.0, 8.3],
+    "lib_size": [25e6, 30e6, 28e6, 32e6, 27e6, 29e6],
+})
+samples_df
+```
+
+### Generate Sample Files
+
+```{python}
+#| label: create-sample-files
+
+rng = np.random.default_rng(42)
+
+experiment_data = pd.DataFrame({
+    "sample_id": [f"S{i}" for i in range(1, 21)],
+    "group": ["control"] * 10 + ["treatment"] * 10,
+    "gene_BRCA1": np.concatenate([
+        rng.normal(5, 1, 10), rng.normal(8, 1.2, 10)
+    ]),
+    "gene_TP53": np.concatenate([
+        rng.normal(12, 2, 10), rng.normal(10, 1.8, 10)
+    ]),
+    "gene_MYC": np.concatenate([
+        rng.normal(3, 0.5, 10), rng.normal(6, 1, 10)
+    ]),
+    "batch": ["batch_1", "batch_2"] * 10,
+    "rin_score": rng.uniform(6.5, 9.5, 20).round(1),
+})
+
+sample_meta = pd.DataFrame({
+    "sample_id": [f"S{i}" for i in range(1, 21)],
+    "age": rng.integers(25, 65, 20),
+    "sex": rng.choice(["M", "F"], 20),
+    "site": rng.choice(["site_A", "site_B", "site_C"], 20),
+})
+
+tmp = tempfile.mkdtemp()
+
+# CSV
+experiment_data.to_csv(os.path.join(tmp, "expression.csv"), index=False)
+# TSV
+experiment_data.to_csv(os.path.join(tmp, "expression.tsv"), sep="\t", index=False)
+# Excel
+experiment_data.to_excel(os.path.join(tmp, "expression.xlsx"), index=False)
+# Metadata
+sample_meta.to_csv(os.path.join(tmp, "metadata.csv"), index=False)
+```
+
+### Reading Data
+
+```{python}
+#| label: read-data
+
+# CSV
+expr = pd.read_csv(os.path.join(tmp, "expression.csv"))
+print(f"CSV shape: {expr.shape}")
+
+# TSV
+expr_tsv = pd.read_csv(os.path.join(tmp, "expression.tsv"), sep="\t")
+print(f"TSV shape: {expr_tsv.shape}")
+
+# Excel
+expr_xl = pd.read_excel(os.path.join(tmp, "expression.xlsx"))
+print(f"Excel shape: {expr_xl.shape}")
+
+expr.head()
+```
+
+### Inspecting DataFrames
+
+```{python}
+#| label: inspect-df
+
+print(expr.dtypes)
+print()
+expr.describe()
+```
+
+```{python}
+#| label: info-df
+
+expr.info()
+```
+
+## 3.2 Selecting Data
+
+### Column Selection
+
+```{python}
+#| label: select-columns
+
+# Single column (returns Series)
+print(penguins["species"].head())
+
+# Multiple columns (returns DataFrame)
+penguins[["species", "bill_length_mm", "body_mass_g"]].head()
+```
+
+### Row Selection
+
+```{python}
+#| label: select-rows
+
+# By position with iloc
+print(penguins.iloc[0])       # first row
+print()
+penguins.iloc[0:3, 0:4]       # first 3 rows, first 4 columns
+```
+
+```{python}
+#| label: loc-selection
+
+# By label with loc
+penguins.loc[penguins["species"] == "Adelie", ["species", "bill_length_mm", "body_mass_g"]].head()
+```
+
+## 3.3 Filtering Rows
+
+```{python}
+#| label: filtering
+
+# Single condition
+gentoo = penguins[penguins["species"] == "Gentoo"]
+print(f"Gentoo: {len(gentoo)} rows")
+
+# Multiple conditions (use & for AND, | for OR, ~ for NOT)
+heavy_gentoo = penguins[
+    (penguins["species"] == "Gentoo") & (penguins["body_mass_g"] > 5500)
+]
+print(f"Heavy Gentoo: {len(heavy_gentoo)} rows")
+
+# isin() for membership
+biscoe_dream = penguins[penguins["island"].isin(["Biscoe", "Dream"])]
+print(f"Biscoe or Dream: {len(biscoe_dream)} rows")
+
+# between()
+mid_bill = penguins[penguins["bill_length_mm"].between(40, 50)]
+print(f"Bill 40-50mm: {len(mid_bill)} rows")
+
+# query() for readable filters
+penguins.query("species == 'Adelie' and body_mass_g > 4000").head()
+```
+
+## 3.4 Adding and Modifying Columns
+
+```{python}
+#| label: mutate
+
+df = penguins.copy()
+
+# Simple calculation
+df["body_mass_kg"] = df["body_mass_g"] / 1000
+
+# Ratio
+df["bill_ratio"] = df["bill_length_mm"] / df["bill_depth_mm"]
+
+# Conditional with np.select (like case_when in R)
+conditions = [
+    df["body_mass_g"] > 5000,
+    df["body_mass_g"] > 3500,
+]
+choices = ["large", "medium"]
+df["size_category"] = np.select(conditions, choices, default="small")
+
+df[["species", "body_mass_kg", "bill_ratio", "size_category"]].head(10)
+```
+
+### `assign()` for Chaining
+
+```{python}
+#| label: assign
+
+(
+    penguins
+    .assign(
+        body_mass_kg=lambda d: d["body_mass_g"] / 1000,
+        bill_ratio=lambda d: d["bill_length_mm"] / d["bill_depth_mm"],
+    )
+    [["species", "body_mass_kg", "bill_ratio"]]
+    .head()
+)
+```
+
+## 3.5 Grouping and Aggregation
+
+```{python}
+#| label: groupby
+
+# Single aggregation
+penguins.groupby("species")["body_mass_g"].mean()
+```
+
+```{python}
+#| label: groupby-agg
+
+# Multiple aggregations
+(
+    penguins
+    .groupby("species")["body_mass_g"]
+    .agg(["count", "mean", "std", "min", "max"])
+    .round(1)
+)
+```
+
+```{python}
+#| label: groupby-multi
+
+# Group by multiple columns + multiple metrics
+(
+    penguins
+    .groupby(["species", "sex"])
+    .agg(
+        mean_flipper=("flipper_length_mm", "mean"),
+        mean_mass=("body_mass_g", "mean"),
+        n=("species", "count"),
+    )
+    .round(1)
+)
+```
+
+## 3.6 Sorting
+
+```{python}
+#| label: sorting
+
+# Sort by values
+penguins.sort_values("body_mass_g", ascending=False).head()
+```
+
+```{python}
+#| label: nlargest
+
+# Top N
+penguins.nlargest(5, "body_mass_g")[["species", "body_mass_g"]]
+```
+
+## 3.7 Value Counts and Unique Values
+
+```{python}
+#| label: value-counts
+
+print(penguins["species"].value_counts())
+print()
+print(penguins["island"].nunique(), "unique islands")
+print(penguins["island"].unique())
+```
+
+## 3.8 Merging (Joins)
+
+```{python}
+#| label: merge-setup
+
+gene_info = pd.DataFrame({
+    "gene_id": ["ENSG001", "ENSG002", "ENSG003", "ENSG004"],
+    "gene_name": ["BRCA1", "TP53", "MYC", "UNKNOWN"],
+    "chromosome": ["chr17", "chr17", "chr8", "chr1"],
+})
+
+expression = pd.DataFrame({
+    "gene_id": ["ENSG001", "ENSG002", "ENSG003", "ENSG005"],
+    "sample": ["S1", "S1", "S1", "S1"],
+    "log2_expr": [5.2, 8.1, 3.7, 6.0],
+})
+```
+
+```{python}
+#| label: merges
+
+# Left join — keep all rows from left
+print("LEFT JOIN:")
+print(pd.merge(expression, gene_info, on="gene_id", how="left"))
+print()
+
+# Inner join — only matching rows
+print("INNER JOIN:")
+print(pd.merge(expression, gene_info, on="gene_id", how="inner"))
+print()
+
+# Outer join — keep all rows from both
+print("OUTER JOIN:")
+print(pd.merge(expression, gene_info, on="gene_id", how="outer"))
+```
+
+### Anti-join (rows with no match)
+
+```{python}
+#| label: anti-join
+
+# Genes in expression that are NOT in gene_info
+merged = pd.merge(expression, gene_info, on="gene_id", how="left", indicator=True)
+anti = merged[merged["_merge"] == "left_only"].drop(columns="_merge")
+print(anti)
+```
+
+## 3.9 Reshaping
+
+### Wide to Long (melt)
+
+```{python}
+#| label: melt
+
+expr_long = expr.melt(
+    id_vars=["sample_id", "group", "batch", "rin_score"],
+    value_vars=["gene_BRCA1", "gene_TP53", "gene_MYC"],
+    var_name="gene",
+    value_name="expression",
+)
+# Clean gene names
+expr_long["gene"] = expr_long["gene"].str.replace("gene_", "")
+expr_long.head(10)
+```
+
+### Long to Wide (pivot)
+
+```{python}
+#| label: pivot
+
+expr_wide = expr_long.pivot_table(
+    index=["sample_id", "group", "batch", "rin_score"],
+    columns="gene",
+    values="expression",
+).reset_index()
+expr_wide.columns.name = None
+expr_wide.head()
+```
+
+### Splitting and Combining Strings
+
+```{python}
+#| label: str-split
+
+coords = pd.DataFrame({
+    "locus": ["chr1:1000-2000", "chr5:3400-4500", "chr17:7500-8900"]
+})
+
+# Split into components
+coords[["chr", "range"]] = coords["locus"].str.split(":", expand=True)
+coords[["start", "end"]] = coords["range"].str.split("-", expand=True)
+coords = coords.drop(columns="range")
+print(coords)
+
+# Combine columns back
+coords["locus_rebuilt"] = coords["chr"] + ":" + coords["start"] + "-" + coords["end"]
+print(coords["locus_rebuilt"])
+```
+
+## 3.10 Handling Missing Values
+
+```{python}
+#| label: missing-values
+
+df_na = pd.DataFrame({
+    "gene": ["A", "B", "C", "D"],
+    "expr1": [5.2, np.nan, 3.1, 7.0],
+    "expr2": [np.nan, 4.3, 2.8, 6.5],
+})
+
+print("Null counts:")
+print(df_na.isnull().sum())
+print()
+
+print("Drop rows with any NA:")
+print(df_na.dropna())
+print()
+
+print("Fill NAs with 0:")
+print(df_na.fillna(0))
+```
+
+
+# Part 4: Plotting with Matplotlib and Seaborn
+
+```{python}
+#| label: plot-setup
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+sns.set_theme(style="whitegrid", palette="Set2")
+```
+
+## 4.1 Matplotlib Basics
+
+Matplotlib uses a **Figure** → **Axes** hierarchy. Always prefer the
+object-oriented API (`fig, ax = plt.subplots()`) over `plt.plot()`.
+
+```{python}
+#| label: mpl-basics
+#| fig-width: 7
+#| fig-height: 5
+
+fig, ax = plt.subplots(figsize=(7, 5))
+ax.scatter(
+    penguins["bill_length_mm"],
+    penguins["body_mass_g"],
+    alpha=0.6,
+    edgecolors="white",
+    linewidths=0.5,
+)
+ax.set_xlabel("Bill Length (mm)")
+ax.set_ylabel("Body Mass (g)")
+ax.set_title("Penguin Body Mass vs Bill Length")
+plt.tight_layout()
+plt.show()
+```
+
+### Subplots
+
+```{python}
+#| label: mpl-subplots
+#| fig-width: 10
+#| fig-height: 4
+
+fig, axes = plt.subplots(1, 3, figsize=(10, 4), sharey=True)
+
+for ax, (name, group) in zip(axes, penguins.groupby("species")):
+    ax.scatter(group["bill_length_mm"], group["body_mass_g"], alpha=0.6, s=30)
+    ax.set_title(name)
+    ax.set_xlabel("Bill Length (mm)")
+
+axes[0].set_ylabel("Body Mass (g)")
+fig.suptitle("Body Mass vs Bill Length by Species", fontsize=13)
+plt.tight_layout()
+plt.show()
+```
+
+## 4.2 Seaborn — High-Level Statistical Plots
+
+### Scatter Plot with Regression Line
+
+```{python}
+#| label: sns-scatter
+#| fig-width: 7
+#| fig-height: 5
+
+fig, ax = plt.subplots(figsize=(7, 5))
+sns.scatterplot(
+    data=penguins, x="flipper_length_mm", y="body_mass_g",
+    hue="species", style="sex", alpha=0.7, ax=ax,
+)
+ax.set_xlabel("Flipper Length (mm)")
+ax.set_ylabel("Body Mass (g)")
+ax.set_title("Penguin Morphometrics")
+plt.tight_layout()
+plt.show()
+```
+
+### Bar Chart
+
+```{python}
+#| label: sns-bar
+#| fig-width: 6
+#| fig-height: 4
+
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.countplot(data=penguins, x="species", hue="island", ax=ax)
+ax.set_title("Penguin Counts by Species and Island")
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
+#| label: sns-barplot
+#| fig-width: 6
+#| fig-height: 4
+
+fig, ax = plt.subplots(figsize=(6, 4))
+sns.barplot(
+    data=penguins, x="species", y="body_mass_g",
+    estimator="mean", errorbar="sd", ax=ax,
+)
+ax.set_ylabel("Body Mass (g)")
+ax.set_title("Mean Body Mass by Species (± SD)")
+plt.tight_layout()
+plt.show()
+```
+
+### Histogram and KDE
+
+```{python}
+#| label: sns-hist-kde
+#| fig-width: 10
+#| fig-height: 4
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+sns.histplot(data=penguins, x="body_mass_g", hue="species",
+             bins=30, alpha=0.6, ax=axes[0])
+axes[0].set_title("Histogram")
+
+sns.kdeplot(data=penguins, x="body_mass_g", hue="species",
+            fill=True, alpha=0.4, ax=axes[1])
+axes[1].set_title("KDE")
+
+plt.tight_layout()
+plt.show()
+```
+
+### Box Plot and Violin Plot
+
+```{python}
+#| label: sns-box-violin
+#| fig-width: 10
+#| fig-height: 4
+
+fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+
+sns.boxplot(data=penguins, x="species", y="flipper_length_mm", ax=axes[0])
+axes[0].set_title("Box Plot")
+
+sns.violinplot(data=penguins, x="species", y="flipper_length_mm",
+               inner="quart", ax=axes[1])
+axes[1].set_title("Violin Plot")
+
+plt.tight_layout()
+plt.show()
+```
+
+### Strip Plot (Jitter)
+
+```{python}
+#| label: sns-strip
+#| fig-width: 7
+#| fig-height: 5
+
+fig, ax = plt.subplots(figsize=(7, 5))
+sns.boxplot(data=penguins, x="species", y="body_mass_g", width=0.5,
+            fliersize=0, ax=ax)
+sns.stripplot(data=penguins, x="species", y="body_mass_g",
+              alpha=0.4, size=3, color="black", ax=ax)
+ax.set_ylabel("Body Mass (g)")
+ax.set_title("Body Mass Distribution with Jittered Points")
+plt.tight_layout()
+plt.show()
+```
+
+### Line Plot
+
+```{python}
+#| label: sns-line
+#| fig-width: 7
+#| fig-height: 4
+
+timecourse = pd.DataFrame({
+    "time": [0, 6, 12, 24, 48] * 3,
+    "gene": sorted(["BRCA1", "TP53", "MYC"] * 5),
+    "expr": [5, 7, 10, 12, 11,
+             12, 11, 9, 8, 7,
+             3, 5, 8, 12, 15],
+})
+
+fig, ax = plt.subplots(figsize=(7, 4))
+sns.lineplot(data=timecourse, x="time", y="expr", hue="gene",
+             marker="o", ax=ax)
+ax.set_xlabel("Time (hours)")
+ax.set_ylabel("Expression (log2 CPM)")
+ax.set_title("Gene Expression Time Course")
+plt.tight_layout()
+plt.show()
+```
+
+### Heatmap
+
+```{python}
+#| label: sns-heatmap
+#| fig-width: 6
+#| fig-height: 5
+
+numeric_cols = penguins.select_dtypes(include="number")
+corr = numeric_cols.corr()
+
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.heatmap(corr, annot=True, fmt=".2f", cmap="RdBu_r", center=0,
+            square=True, linewidths=0.5, ax=ax)
+ax.set_title("Correlation Heatmap")
+plt.tight_layout()
+plt.show()
+```
+
+### Pair Plot
+
+```{python}
+#| label: sns-pairplot
+#| fig-width: 8
+#| fig-height: 8
+
+sns.pairplot(
+    penguins,
+    hue="species",
+    vars=["bill_length_mm", "bill_depth_mm", "flipper_length_mm", "body_mass_g"],
+    diag_kind="kde",
+    plot_kws={"alpha": 0.5, "s": 20},
+)
+plt.suptitle("Pair Plot — Palmer Penguins", y=1.02)
+plt.show()
+```
+
+### FacetGrid
+
+```{python}
+#| label: sns-facetgrid
+#| fig-width: 10
+#| fig-height: 4
+
+g = sns.FacetGrid(penguins, col="species", hue="sex", height=4, aspect=1)
+g.map_dataframe(sns.scatterplot, x="bill_length_mm", y="body_mass_g", alpha=0.6)
+g.add_legend()
+g.set_axis_labels("Bill Length (mm)", "Body Mass (g)")
+g.figure.suptitle("Bill Length vs Body Mass by Species and Sex", y=1.03)
+plt.show()
+```
+
+### Saving Figures
+
+```{python}
+#| label: saving
+#| eval: false
+
+fig.savefig("my_figure.png", dpi=300, bbox_inches="tight")
+fig.savefig("my_figure.pdf", bbox_inches="tight")
+```
+
+
+# Part 5: Statistical Analyses
+
+```{python}
+#| label: stats-setup
+
+from scipy import stats
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
+```
+
+## 5.1 Descriptive Statistics
+
+```{python}
+#| label: descriptive
+
+penguins.groupby("species")[["body_mass_g", "bill_length_mm", "flipper_length_mm"]].describe().round(1)
+```
+
+### Normality Testing
+
+```{python}
+#| label: normality
+
+for species, group in penguins.groupby("species"):
+    stat, p = stats.shapiro(group["body_mass_g"])
+    print(f"{species:>10}: W={stat:.4f}, p={p:.4f}")
+```
+
+```{python}
+#| label: qq-plots
+#| fig-width: 10
+#| fig-height: 4
+
+fig, axes = plt.subplots(1, 3, figsize=(10, 4))
+for ax, (species, group) in zip(axes, penguins.groupby("species")):
+    stats.probplot(group["body_mass_g"], plot=ax)
+    ax.set_title(f"{species}")
+
+fig.suptitle("QQ Plots for Body Mass by Species", fontsize=13)
+plt.tight_layout()
+plt.show()
+```
+
+## 5.2 T-Tests
+
+### Two-Sample T-Test
+
+```{python}
+#| label: t-test
+
+adelie = penguins[penguins["species"] == "Adelie"]["bill_length_mm"]
+chinstrap = penguins[penguins["species"] == "Chinstrap"]["bill_length_mm"]
+
+t_stat, p_value = stats.ttest_ind(adelie, chinstrap)
+print(f"t = {t_stat:.4f}")
+print(f"p = {p_value:.2e}")
+```
+
+### Welch's T-Test (unequal variances)
+
+```{python}
+#| label: welch-t-test
+
+t_stat, p_value = stats.ttest_ind(adelie, chinstrap, equal_var=False)
+print(f"Welch's t = {t_stat:.4f}")
+print(f"p = {p_value:.2e}")
+```
+
+### Effect Size (Cohen's d)
+
+```{python}
+#| label: cohens-d
+
+def cohens_d(group1, group2):
+    """Calculate Cohen's d for two independent groups.
+
+    Args:
+        group1: First group values.
+        group2: Second group values.
+
+    Returns:
+        Cohen's d effect size.
+    """
+    n1, n2 = len(group1), len(group2)
+    pooled_std = np.sqrt(
+        ((n1 - 1) * group1.std() ** 2 + (n2 - 1) * group2.std() ** 2)
+        / (n1 + n2 - 2)
+    )
+    return (group1.mean() - group2.mean()) / pooled_std
+
+d = cohens_d(adelie, chinstrap)
+print(f"Cohen's d = {d:.4f}")
+```
+
+### Visualise
+
+```{python}
+#| label: t-test-plot
+#| fig-width: 6
+#| fig-height: 5
+
+two_sp = penguins[penguins["species"].isin(["Adelie", "Chinstrap"])]
+
+fig, ax = plt.subplots(figsize=(6, 5))
+sns.boxplot(data=two_sp, x="species", y="bill_length_mm", ax=ax)
+sns.stripplot(data=two_sp, x="species", y="bill_length_mm",
+              alpha=0.4, color="black", size=3, ax=ax)
+
+# Annotate significance
+y_max = two_sp["bill_length_mm"].max() + 2
+ax.plot([0, 0, 1, 1], [y_max, y_max + 0.5, y_max + 0.5, y_max], "k-", lw=1)
+ax.text(0.5, y_max + 0.7, f"p = {p_value:.2e}", ha="center", fontsize=10)
+
+ax.set_ylabel("Bill Length (mm)")
+ax.set_title("Bill Length: Adelie vs Chinstrap")
+plt.tight_layout()
+plt.show()
+```
+
+## 5.3 ANOVA
+
+### One-Way ANOVA
+
+```{python}
+#| label: anova
+
+adelie_mass = penguins[penguins["species"] == "Adelie"]["body_mass_g"]
+chinstrap_mass = penguins[penguins["species"] == "Chinstrap"]["body_mass_g"]
+gentoo_mass = penguins[penguins["species"] == "Gentoo"]["body_mass_g"]
+
+f_stat, p_value = stats.f_oneway(adelie_mass, chinstrap_mass, gentoo_mass)
+print(f"F = {f_stat:.2f}")
+print(f"p = {p_value:.2e}")
+```
+
+### Using statsmodels (with ANOVA table)
+
+```{python}
+#| label: anova-table
+
+model = smf.ols("body_mass_g ~ C(species)", data=penguins).fit()
+anova_table = sm.stats.anova_lm(model, typ=2)
+print(anova_table.round(4))
+```
+
+### Post-hoc: Tukey's HSD
+
+```{python}
+#| label: tukey
+
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+
+tukey = pairwise_tukeyhsd(penguins["body_mass_g"], penguins["species"])
+print(tukey)
+```
+
+### Check Assumptions: Levene's Test
+
+```{python}
+#| label: levene
+
+stat, p = stats.levene(adelie_mass, chinstrap_mass, gentoo_mass)
+print(f"Levene's test: W={stat:.4f}, p={p:.4f}")
+```
+
+### Visualise
+
+```{python}
+#| label: anova-plot
+#| fig-width: 7
+#| fig-height: 5
+
+fig, ax = plt.subplots(figsize=(7, 5))
+sns.boxplot(data=penguins, x="species", y="body_mass_g", ax=ax)
+sns.stripplot(data=penguins, x="species", y="body_mass_g",
+              alpha=0.3, color="black", size=2, ax=ax)
+
+ax.set_ylabel("Body Mass (g)")
+ax.set_title(f"Body Mass by Species (ANOVA F={f_stat:.1f}, p={p_value:.2e})")
+plt.tight_layout()
+plt.show()
+```
+
+## 5.4 Correlation
+
+```{python}
+#| label: correlation
+
+# Pearson correlation
+r, p = stats.pearsonr(penguins["bill_length_mm"], penguins["body_mass_g"])
+print(f"Pearson r = {r:.4f}, p = {p:.2e}")
+
+# Spearman rank correlation
+rho, p_spear = stats.spearmanr(penguins["bill_length_mm"], penguins["body_mass_g"])
+print(f"Spearman ρ = {rho:.4f}, p = {p_spear:.2e}")
+```
+
+### Correlation Matrix
+
+```{python}
+#| label: corr-matrix
+
+corr_mat = numeric_cols.corr()
+p_mat = numeric_cols.corr(method=lambda x, y: stats.pearsonr(x, y)[1])
+
+print("Correlation coefficients:")
+print(corr_mat.round(3))
+print("\nP-values:")
+print(p_mat.round(4))
+```
+
+```{python}
+#| label: corr-scatter
+#| fig-width: 7
+#| fig-height: 5
+
+fig, ax = plt.subplots(figsize=(7, 5))
+sns.scatterplot(data=penguins, x="bill_length_mm", y="body_mass_g",
+                hue="species", alpha=0.6, ax=ax)
+sns.regplot(data=penguins, x="bill_length_mm", y="body_mass_g",
+            scatter=False, color="black", ax=ax)
+ax.text(
+    0.05, 0.95, f"r = {r:.3f}, p = {p:.2e}",
+    transform=ax.transAxes, fontsize=11,
+    verticalalignment="top",
+    bbox=dict(boxstyle="round", facecolor="white", alpha=0.8),
+)
+ax.set_xlabel("Bill Length (mm)")
+ax.set_ylabel("Body Mass (g)")
+ax.set_title("Correlation: Bill Length vs Body Mass")
+plt.tight_layout()
+plt.show()
+```
+
+## 5.5 Linear Regression
+
+### Simple Linear Regression
+
+```{python}
+#| label: simple-lm
+
+model = smf.ols("body_mass_g ~ bill_length_mm", data=penguins).fit()
+print(model.summary())
+```
+
+### Tidy Coefficients
+
+```{python}
+#| label: lm-coefficients
+
+coef_df = pd.DataFrame({
+    "term": model.params.index,
+    "estimate": model.params.values,
+    "std_error": model.bse.values,
+    "t_value": model.tvalues.values,
+    "p_value": model.pvalues.values,
+    "conf_low": model.conf_int()[0].values,
+    "conf_high": model.conf_int()[1].values,
+})
+coef_df.round(4)
+```
+
+### Multiple Regression
+
+```{python}
+#| label: multiple-lm
+
+model_multi = smf.ols(
+    "body_mass_g ~ bill_length_mm + flipper_length_mm + C(species)",
+    data=penguins,
+).fit()
+
+print(f"R² = {model_multi.rsquared:.4f}")
+print(f"Adj. R² = {model_multi.rsquared_adj:.4f}")
+print(f"AIC = {model_multi.aic:.1f}")
+print()
+
+# Coefficients
+coef_multi = pd.DataFrame({
+    "estimate": model_multi.params,
+    "std_error": model_multi.bse,
+    "p_value": model_multi.pvalues,
+}).round(4)
+coef_multi
+```
+
+### Diagnostic Plots
+
+```{python}
+#| label: diagnostics
+#| fig-width: 10
+#| fig-height: 4
+
+fig, axes = plt.subplots(1, 3, figsize=(10, 4))
+
+residuals = model_multi.resid
+fitted = model_multi.fittedvalues
+
+# Residuals vs Fitted
+axes[0].scatter(fitted, residuals, alpha=0.4, s=15)
+axes[0].axhline(0, color="red", linestyle="--", linewidth=1)
+axes[0].set_xlabel("Fitted Values")
+axes[0].set_ylabel("Residuals")
+axes[0].set_title("Residuals vs Fitted")
+
+# QQ plot
+stats.probplot(residuals, plot=axes[1])
+axes[1].set_title("QQ Plot of Residuals")
+
+# Histogram of residuals
+axes[2].hist(residuals, bins=25, edgecolor="white", alpha=0.7)
+axes[2].set_xlabel("Residuals")
+axes[2].set_title("Residual Distribution")
+
+plt.tight_layout()
+plt.show()
+```
+
+## 5.6 Chi-Square Test
+
+Test whether species distribution is independent of island:
+
+```{python}
+#| label: chi-square
+
+contingency = pd.crosstab(penguins["species"], penguins["island"])
+print(contingency)
+print()
+
+chi2, p, dof, expected = stats.chi2_contingency(contingency)
+print(f"χ² = {chi2:.2f}")
+print(f"p = {p:.2e}")
+print(f"df = {dof}")
+```
+
+```{python}
+#| label: chi-square-plot
+#| fig-width: 7
+#| fig-height: 5
+
+fig, ax = plt.subplots(figsize=(7, 5))
+
+# Proportional stacked bar
+ct_norm = contingency.div(contingency.sum(axis=0), axis=1)
+ct_norm.T.plot(kind="bar", stacked=True, ax=ax, alpha=0.8)
+
+ax.set_ylabel("Proportion")
+ax.set_xlabel("Island")
+ax.set_title("Species Composition by Island")
+ax.legend(title="Species", bbox_to_anchor=(1.05, 1))
+plt.xticks(rotation=0)
+plt.tight_layout()
+plt.show()
+```
+
+
+# Summary
+
+| Topic | Key Functions / Methods |
+|-------|------------------------|
+| **Data types** | `type()`, `int()`, `float()`, `str()`, `bool()` |
+| **Lists** | `append()`, `extend()`, `sort()`, list comprehensions |
+| **Dicts** | `dict[key]`, `.get()`, `.items()`, dict comprehensions |
+| **Sets** | `&`, `\|`, `-`, `in` |
+| **NumPy** | `np.array()`, `np.arange()`, `.mean()`, `.reshape()` |
+| **Read data** | `pd.read_csv()`, `pd.read_excel()`, `sep="\t"` |
+| **Filter rows** | `df[condition]`, `.query()`, `.isin()`, `.between()` |
+| **Select columns** | `df[["col"]]`, `.loc[]`, `.iloc[]` |
+| **Transform** | `.assign()`, `np.select()`, `.str` accessor |
+| **Aggregate** | `.groupby()`, `.agg()`, `.describe()` |
+| **Reshape** | `.melt()`, `.pivot_table()`, `.str.split()` |
+| **Join** | `pd.merge()`, `how="left/inner/outer"` |
+| **Matplotlib** | `fig, ax = plt.subplots()`, `ax.scatter()`, `ax.set_*()` |
+| **Seaborn** | `sns.scatterplot()`, `sns.boxplot()`, `sns.heatmap()` |
+| **T-test** | `stats.ttest_ind()`, `equal_var=False` |
+| **ANOVA** | `stats.f_oneway()`, `sm.stats.anova_lm()`, `pairwise_tukeyhsd()` |
+| **Correlation** | `stats.pearsonr()`, `stats.spearmanr()`, `.corr()` |
+| **Regression** | `smf.ols().fit()`, `.summary()`, `.params`, `.conf_int()` |
+| **Chi-square** | `stats.chi2_contingency()`, `pd.crosstab()` |
+
+## Next Steps
+
+- **Scikit-learn**: Machine learning (classification, regression, clustering)
+- **Biopython**: Sequence analysis, BLAST, GenBank parsing
+- **Scanpy / AnnData**: Single-cell RNA-seq analysis
+- **Python Data Science Handbook**: Free online at [jakevdp.github.io/PythonDataScienceHandbook](https://jakevdp.github.io/PythonDataScienceHandbook/)
