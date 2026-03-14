@@ -1,0 +1,8 @@
+numpy>=1.26
+pandas>=2.2
+scikit-learn>=1.4
+pyyaml>=6.0
+pytorch-lightning>=2.4
+pytorch-tabular>=1.1
+einops>=0.7
+torchmetrics>=1.5

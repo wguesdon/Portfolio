@@ -1,0 +1,23 @@
+competition:
+  name: "cibmtr-hct"
+  s3_bucket: "kaggle-cibmtr-hct"
+  metric: "stratified_ci"
+  target_column: "efs"
+  num_classes: 1  # survival / binary
+
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+
+training:
+  n_folds: 5
+  random_state: 42
+  n_trials: 0  # use pre-tuned params
+
+models:
+  enabled: ["nn"]
+  nn:
+    instance_type: "ml.g4dn.xlarge"  # GPU T4
+    use_spot: true
+    max_runtime_hours: 2
+    max_wait_hours: 3

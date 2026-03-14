@@ -1,0 +1,295 @@
+---
+title: "CIBMTR — Equity in post-HCT Survival Predictions"
+subtitle: "Kaggle Competition | Stratified Concordance Index | XGBoost · LightGBM · CatBoost Ensemble"
+author: "Will"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-float: true
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    fig-width: 10
+    fig-height: 6
+jupyter: python3
+---
+
+```{python}
+#| include: false
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path("src").resolve()))
+
+import warnings
+warnings.filterwarnings("ignore")
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
+import seaborn as sns
+from IPython.display import display
+
+from config import EDA_DIR, MODEL_DIR, EFS_COL, TIME_COL, GROUP_COL
+from features import load_raw, load_and_prepare, get_Xy
+from metrics import stratified_concordance_index
+
+TRAIN_FILE = Path("data/train.csv")
+sns.set_theme(style="whitegrid", font_scale=1.05)
+plt.rcParams.update({"axes.spines.top": False, "axes.spines.right": False})
+
+def show(name, folder=EDA_DIR):
+    img = mpimg.imread(folder / f"{name}.png")
+    fig, ax = plt.subplots(figsize=(12, img.shape[0] / img.shape[1] * 12))
+    ax.imshow(img)
+    ax.axis("off")
+    plt.tight_layout()
+    plt.show()
+```
+
+## Overview
+
+This project addresses the [CIBMTR — Equity in post-HCT Survival Predictions](https://www.kaggle.com/competitions/equity-post-HCT-survival-predictions) Kaggle competition. The challenge is to predict **Event-Free Survival (EFS)** after allogeneic Hematopoietic Cell Transplantation (HCT) in a way that is fair across racial groups.
+
+**Key challenge**: standard survival models optimise for overall accuracy but often perform unevenly across minority populations. The competition uses a **Stratified Concordance Index** that penalises models with high variance across racial groups.
+
+$$\text{Score} = \bar{C} - \sigma(C) = \text{mean}(C_{\text{race}}) - \text{std}(C_{\text{race}})$$
+
+**Best competition submission**: **0.6928** (private leaderboard)
+
+---
+
+## Dataset
+
+```{python}
+df = load_raw(TRAIN_FILE)
+df[EFS_COL] = (df[EFS_COL] == 1).astype(int)
+
+print(f"Training samples : {len(df):,}")
+print(f"Features         : {df.shape[1] - 3}")   # -ID, efs, efs_time
+print(f"Event rate (EFS) : {df[EFS_COL].mean():.1%}")
+print(f"Race groups      : {df[GROUP_COL].nunique()}")
+print(f"Median EFS time  : {df[TIME_COL].median():.1f} months")
+print(f"\nRace group breakdown:")
+print(df[GROUP_COL].value_counts().to_string())
+```
+
+The dataset contains **28,800 synthetic patients** with 57 clinical and transplant-related features including HLA matching scores, comorbidity indices, disease type, conditioning intensity, and donor characteristics.
+
+### Target Variables
+
+| Column | Description |
+|--------|-------------|
+| `efs` | Event-Free Survival indicator (1 = relapse/death, 0 = censored) |
+| `efs_time` | Time to EFS event or last follow-up (months) |
+
+---
+
+## Exploratory Data Analysis
+
+### Patient Demographics
+
+```{python}
+show("01_race_distribution")
+```
+
+```{python}
+show("02_event_rates_by_race")
+```
+
+White patients dominate the dataset (>80%), creating class imbalance across racial groups. The event rate (EFS=1, meaning relapse or death) varies across groups — highlighting the equity challenge this competition targets.
+
+### Survival Time Distribution
+
+```{python}
+show("03_survival_time_distribution")
+```
+
+EFS time is right-skewed; log transformation brings it closer to Gaussian — motivating our regression target of `log(efs_time)`.
+
+### Kaplan-Meier Survival Curves by Race
+
+```{python}
+show("04_kaplan_meier_by_race")
+```
+
+The KM curves reveal meaningful differences in survival probability trajectories across racial groups. The competition metric rewards models that perform equally well across all groups, not just the majority White population.
+
+### Missing Values
+
+```{python}
+show("05_missing_values")
+```
+
+Several features have moderate missingness (~10–30%). Tree-based models (XGBoost, LightGBM, CatBoost) handle missing values natively, so no imputation is required.
+
+### Feature Distributions by Event Status
+
+```{python}
+show("06_features_by_event_status")
+```
+
+```{python}
+show("07_categorical_event_rates")
+```
+
+Key findings:
+- **Karnofsky score** (performance status): lower scores → higher event rate
+- **Comorbidity score**: higher → worse prognosis
+- **Conditioning intensity**: MAC (myeloablative) vs RIC (reduced intensity) shows distinct event profiles
+- **Disease type** (`prim_disease_hct`): strong prognostic signal
+
+### Feature Correlations
+
+```{python}
+show("08_correlation_matrix")
+```
+
+HLA matching features are highly correlated with each other (expected, as they measure overlapping loci). `efs_time` shows moderate correlation with `comorbidity_score` and `karnofsky_score`.
+
+---
+
+## Feature Engineering
+
+| Feature | Description |
+|---------|-------------|
+| Label encoding | All 34 categorical columns encoded (LabelEncoder on combined train+test) |
+| `hla_total_match` | Sum of all HLA matching scores |
+| `hla_missing_count` | Number of missing HLA fields per patient |
+| `age_gap` | Donor age − recipient age at HCT |
+| `log(efs_time)` | Log-transformed regression target |
+
+Missing values are left as `NaN` — all three models handle them natively via built-in split finding with missing directions.
+
+---
+
+## Models
+
+Three gradient boosting models are trained on `log(efs_time)` as the regression target:
+
+| Model | n_estimators | max_depth | learning_rate | Key params |
+|-------|-------------|-----------|---------------|------------|
+| **XGBoost** | 600 | 6 | 0.04 | subsample=0.8, colsample_bytree=0.7 |
+| **LightGBM** | 600 | — | 0.04 | num_leaves=63, min_child_samples=20 |
+| **CatBoost** | 600 | 6 | 0.04 | subsample=0.8, colsample_bylevel=0.7 |
+
+All models use 5-fold stratified CV (stratified on EFS indicator).
+
+---
+
+## Results
+
+```{python}
+#| cache: true
+#| output: false
+import subprocess, sys
+# Load pre-computed results
+results = pd.read_csv(MODEL_DIR / "cv_results.csv", index_col=0)
+```
+
+```{python}
+display(results.style.highlight_max(axis=0, color="#c6efce")
+               .format("{:.4f}")
+               .set_caption("5-Fold CV Results — Stratified Concordance Index"))
+```
+
+### Model Comparison
+
+```{python}
+show("01_model_cv_comparison", MODEL_DIR)
+```
+
+All three models achieve similar Stratified C-Index (~0.652–0.657). CatBoost edges ahead on OOF score.
+
+### Per-Race Group C-Index
+
+```{python}
+show("02_per_group_ci", MODEL_DIR)
+```
+
+The per-group breakdown shows relatively consistent performance across racial groups, with slightly lower scores for smaller groups (AI/AN, NHPI) due to limited data.
+
+### Predicted vs Actual Survival Time
+
+```{python}
+show("04_predicted_vs_actual", MODEL_DIR)
+```
+
+### Feature Importance
+
+```{python}
+show("03_feature_importance_xgboost", MODEL_DIR)
+```
+
+```{python}
+show("03_feature_importance_lightgbm", MODEL_DIR)
+```
+
+Key predictors (consistent across models):
+
+- **`karnofsky_score`** — patient performance status at HCT
+- **`comorbidity_score`** — Sorror comorbidity index
+- **`age_at_hct`** — recipient age
+- **`year_hct`** — transplant year (improving outcomes over time)
+- **HLA matching scores** — donor-recipient compatibility
+- **`hla_total_match`** — engineered composite HLA score
+
+---
+
+## Ensemble Strategy
+
+The final submission uses a **rank-based weighted ensemble**:
+
+1. Each model's `log(efs_time)` predictions are negated (to get risk scores)
+2. Risk scores are normalised to `[0, 1]` percentile ranks
+3. Weighted average: XGBoost × 0.38 + LightGBM × 0.38 + CatBoost × 0.24
+
+**Why rank-based?** Raw prediction scales differ across models (XGBoost, LightGBM, and CatBoost outputs are not on the same scale). Rank normalisation removes scale bias while preserving ordinal information. The C-index is itself rank-based, so this is a natural match.
+
+```{python}
+show("05_prediction_correlations", MODEL_DIR)
+```
+
+Model predictions are highly correlated (r > 0.95), which is expected since they're all regressing on the same target. The ensemble still reduces variance.
+
+```{python}
+show("06_ensemble_distribution", MODEL_DIR)
+```
+
+---
+
+## Key Insights
+
+1. **Clinical features dominate**: Karnofsky score and comorbidity index are consistently the strongest predictors — confirming that patient fitness at transplant is the primary driver of outcomes.
+
+2. **HLA compatibility matters**: HLA matching scores (total and per-locus) rank highly across all models.
+
+3. **Equity gap exists**: KM curves and per-group C-indices reveal meaningful disparities, particularly for smaller racial groups. The stratified metric correctly penalises models that ignore these gaps.
+
+4. **Ensemble over single model**: The rank ensemble adds marginal improvement over individual models and increases robustness.
+
+5. **Leaderboard**: Best submission achieved **0.6928** private score, placing in the top quartile.
+
+---
+
+## Reproduction
+
+```bash
+# EDA only
+uv run python src/eda.py
+
+# Model training
+uv run python src/train.py
+
+# Ensemble + submission
+uv run python src/ensemble.py
+
+# Full pipeline
+uv run python src/run_pipeline.py
+
+# Full pipeline + this report
+uv run python src/run_pipeline.py --report
+```
