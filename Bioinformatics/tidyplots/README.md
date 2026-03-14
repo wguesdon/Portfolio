@@ -1,8 +1,6 @@
 # tidyplots Tutorial — Airway RNA-seq Dataset
 
-A self-contained tutorial demonstrating [tidyplots](https://jbengler.github.io/tidyplots/) for
-publication-ready bioinformatics visualisations, using the canonical **airway** RNA-seq dataset
-(Himes et al. 2014, GSE52778).
+**9 publication-ready figures from DESeq2 results** — Self-contained tutorial demonstrating [tidyplots](https://jbengler.github.io/tidyplots/) for bioinformatics visualisations, using the canonical **airway** RNA-seq dataset (Himes et al. 2014, GSE52778). Produces volcano plots, MA plots, and heatmaps in a containerized R environment.
 
 ---
 
