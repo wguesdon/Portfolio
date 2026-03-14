@@ -1,8 +1,6 @@
 # BCR Repertoire Analysis — COVID-19
 
-End-to-end bulk B-cell receptor (BCR) repertoire pipeline using
-[nf-core/airrflow](https://nf-co.re/airrflow), applied to COVID-19 patients
-with varying disease severity.
+**Convergent antibody signatures across disease severity** — End-to-end bulk B-cell receptor (BCR) repertoire pipeline using [nf-core/airrflow](https://nf-co.re/airrflow), processing 6 amplicon-based IGH samples through pRESTO, IgBLAST, and Immcantation to identify shared adaptive responses to SARS-CoV-2.
 
 **Dataset:** [PRJNA639956](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA639956) —
 Galson et al. 2020, *Frontiers in Immunology*
