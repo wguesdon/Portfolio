@@ -1,0 +1,20 @@
+[project]
+name = "phd-stipends"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.13"
+dependencies = [
+    "matplotlib>=3.10.8",
+    "nbclient>=0.10.4",
+    "nbconvert>=7.17.0",
+    "nbformat>=5.10.4",
+    "openpyxl>=3.1.5",
+    "pandas>=3.0.1",
+    "pyyaml>=6.0.3",
+    "seaborn>=0.13.2",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.2.0",
+]
