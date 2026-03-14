@@ -1,0 +1,34 @@
+FROM python:3.13-slim AS base
+
+LABEL maintainer="Portfolio 2026"
+LABEL description="Stroke risk factor analysis with Quarto report"
+
+# ── System dependencies for matplotlib and Quarto ────────────────────────────
+RUN apt-get update -qq && apt-get install -y --no-install-recommends \
+        wget \
+        gdebi-core \
+        libfreetype6-dev \
+        libpng-dev \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# ── Install Quarto CLI ──────────────────────────────────────────────────────
+RUN wget -q https://github.com/quarto-dev/quarto-cli/releases/download/v1.6.42/quarto-1.6.42-linux-amd64.deb \
+    && gdebi -n quarto-1.6.42-linux-amd64.deb \
+    && rm quarto-1.6.42-linux-amd64.deb
+
+# ── Install uv ──────────────────────────────────────────────────────────────
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+WORKDIR /project
+
+# ── Install Python dependencies ─────────────────────────────────────────────
+COPY pyproject.toml .python-version ./
+RUN uv sync --no-dev
+
+# ── Copy project files ──────────────────────────────────────────────────────
+COPY Data/ Data/
+COPY report.qmd ./
+RUN mkdir -p output
+
+CMD ["uv", "run", "quarto", "render", "report.qmd"]

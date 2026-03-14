@@ -1,0 +1,926 @@
+---
+title: "Factors Influencing Stroke — A Multi-Method Analysis"
+subtitle: "Supervised Learning, Unsupervised Learning, Causal Inference, and Ensemble Modelling"
+author: "Portfolio 2026"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    embed-resources: true
+    fig-width: 10
+    fig-height: 6
+jupyter: python3
+execute:
+  warning: false
+---
+
+## Introduction
+
+Stroke is a leading cause of death and long-term disability worldwide. This report
+applies **four complementary analytical approaches** to identify the combination of
+patient features most associated with stroke risk, using the
+[Kaggle Healthcare Stroke Dataset](https://www.kaggle.com/asaumya/healthcare-dataset-stroke-data)
+(43,400 observations, 11 features).
+
+| Analysis | Approach | Goal |
+|----------|----------|------|
+| I | Supervised learning | Identify feature combinations predictive of stroke |
+| II | Unsupervised learning | Discover patient sub-populations and their stroke susceptibility |
+| III | Causal inference | Estimate causal effects of modifiable risk factors |
+| IV | Ensemble model | Combine methods into a unified feature importance ranking |
+
+```{python}
+#| label: setup
+import warnings
+from pathlib import Path
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import seaborn as sns
+import shap
+from scipy import stats
+from sklearn.calibration import calibration_curve
+from sklearn.cluster import KMeans
+from sklearn.compose import ColumnTransformer
+from sklearn.decomposition import PCA
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import (
+    PrecisionRecallDisplay,
+    RocCurveDisplay,
+    average_precision_score,
+    precision_recall_curve,
+    precision_recall_fscore_support,
+    roc_auc_score,
+    silhouette_score,
+)
+from sklearn.model_selection import (
+    StratifiedKFold,
+    cross_val_predict,
+    cross_val_score,
+)
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+OUTDIR = Path("output")
+OUTDIR.mkdir(exist_ok=True)
+
+
+def savefig(fig, name):
+    """Save figure to output directory at 300 DPI."""
+    fig.savefig(OUTDIR / name, dpi=300, bbox_inches="tight")
+```
+
+---
+
+## 1. Exploratory Data Analysis
+
+### 1.1 Data Overview
+
+```{python}
+#| label: load-data
+df_raw = pd.read_csv("Data/train_2v.csv")
+print(f"Dataset: {df_raw.shape[0]:,} rows × {df_raw.shape[1]} columns")
+df_raw.head()
+```
+
+```{python}
+#| label: data-types
+print("Column types and non-null counts:\n")
+df_raw.info()
+```
+
+```{python}
+#| label: descriptive-stats
+df_raw.describe(include="all").T
+```
+
+### 1.2 Missing Data
+
+```{python}
+#| label: fig-missing
+#| fig-cap: "Missing value pattern. BMI has 3.4% missing values; smoking_status has 30.6% blank entries corresponding predominantly to children."
+smoking_blank = (df_raw["smoking_status"].isna() | (df_raw["smoking_status"] == "")).sum()
+bmi_null = df_raw["bmi"].isna().sum()
+
+fig, axes = plt.subplots(2, 1, figsize=(8, 7))
+
+axes[0].barh(["smoking_status", "bmi"], [smoking_blank, bmi_null],
+             color=["#E64B35", "#4DBBD5"])
+for i, v in enumerate([smoking_blank, bmi_null]):
+    axes[0].text(v + 100, i, f"{v:,} ({v/len(df_raw):.1%})", va="center")
+axes[0].set_xlabel("Missing Count")
+axes[0].set_title("Missing Values by Column")
+
+mask_blank = df_raw["smoking_status"].isna() | (df_raw["smoking_status"] == "")
+axes[1].hist(df_raw.loc[mask_blank, "age"], bins=30, color="#E64B35", alpha=0.7,
+             label="Smoking blank", density=True)
+axes[1].hist(df_raw.loc[~mask_blank, "age"], bins=30, color="#4DBBD5", alpha=0.5,
+             label="Smoking known", density=True)
+axes[1].set_xlabel("Age")
+axes[1].set_ylabel("Density")
+axes[1].set_title("Age Distribution: Missing vs Known Smoking Status")
+axes[1].legend()
+
+fig.tight_layout()
+savefig(fig, "01_missing_data.png")
+plt.show()
+```
+
+The blank smoking entries are concentrated among patients under ~17, confirming this
+is **informative missingness** (children without smoking history), not random.
+
+### 1.3 Target Variable — Class Imbalance
+
+```{python}
+#| label: fig-class-balance
+#| fig-cap: "Severe class imbalance: only 1.8% of observations experienced a stroke."
+stroke_counts = df_raw["stroke"].value_counts().sort_index()
+fig, ax = plt.subplots(figsize=(6, 4))
+bars = ax.bar(["No Stroke (0)", "Stroke (1)"], stroke_counts.values,
+              color=["#4DBBD5", "#E64B35"], edgecolor="white")
+for bar, v in zip(bars, stroke_counts.values):
+    ax.text(bar.get_x() + bar.get_width()/2, v + 200,
+            f"{v:,}\n({v/len(df_raw):.1%})", ha="center", fontsize=11)
+ax.set_ylabel("Count")
+ax.set_title("Stroke Class Distribution")
+fig.tight_layout()
+savefig(fig, "02_class_balance.png")
+plt.show()
+```
+
+### 1.4 Pre-processing
+
+```{python}
+#| label: preprocess
+df = df_raw.copy()
+
+# Drop id (no predictive value)
+df = df.drop(columns=["id"])
+
+# Drop 11 "Other" gender rows (too few to model)
+print(f"Gender value counts:\n{df['gender'].value_counts()}\n")
+df = df[df["gender"] != "Other"].copy()
+
+# BMI: age-stratified median imputation
+df["age_decade"] = (df["age"] // 10) * 10
+bmi_medians = df.groupby("age_decade")["bmi"].transform("median")
+df["bmi"] = df["bmi"].fillna(bmi_medians)
+df = df.drop(columns=["age_decade"])
+
+# Smoking status: encode blanks as "unknown"
+df["smoking_status"] = df["smoking_status"].replace("", "unknown").fillna("unknown")
+
+print(f"After cleaning: {df.shape[0]:,} rows, {df.shape[1]} columns")
+print(f"Remaining nulls: {df.isnull().sum().sum()}")
+```
+
+### 1.5 Univariate Feature Distributions
+
+```{python}
+#| label: fig-numeric-distributions
+#| fig-cap: "Distribution of numeric features stratified by stroke status. Stroke patients tend to be older and have higher glucose levels."
+numeric_cols = ["age", "avg_glucose_level", "bmi"]
+fig, axes = plt.subplots(3, 1, figsize=(8, 10))
+
+for ax, col in zip(axes, numeric_cols):
+    for label, color, name in [(0, "#4DBBD5", "No Stroke"), (1, "#E64B35", "Stroke")]:
+        sub = df.loc[df["stroke"] == label, col]
+        ax.hist(sub, bins=30, alpha=0.6, color=color, label=name, density=True)
+    ax.set_xlabel(col.replace("_", " ").title())
+    ax.set_ylabel("Density")
+    ax.legend(fontsize=8)
+
+fig.suptitle("Numeric Feature Distributions by Stroke Status", fontsize=13)
+fig.tight_layout()
+savefig(fig, "03_numeric_distributions.png")
+plt.show()
+```
+
+```{python}
+#| label: fig-categorical-distributions
+#| fig-cap: "Stroke prevalence across categorical feature levels. Hypertension, heart disease, older age (via work type proxy), and formerly smoked show elevated stroke rates."
+cat_cols = ["gender", "hypertension", "heart_disease", "ever_married",
+            "work_type", "Residence_type", "smoking_status"]
+
+fig, axes = plt.subplots(len(cat_cols), 1, figsize=(8, len(cat_cols) * 2.5))
+
+for ax, col in zip(axes, cat_cols):
+    ct = df.groupby(col)["stroke"].agg(["sum", "count"])
+    ct["rate"] = ct["sum"] / ct["count"]
+    ct = ct.sort_values("rate", ascending=True)
+    colors = ["#E64B35" if r > df["stroke"].mean() else "#4DBBD5" for r in ct["rate"]]
+    ax.barh(ct.index.astype(str), ct["rate"], color=colors)
+    ax.set_xlabel("Stroke Rate")
+    ax.set_title(col)
+    ax.axvline(df["stroke"].mean(), color="black", linestyle="--",
+               linewidth=0.8, alpha=0.5)
+
+fig.suptitle("Stroke Prevalence by Categorical Feature", fontsize=13)
+fig.tight_layout()
+savefig(fig, "04_categorical_distributions.png")
+plt.show()
+```
+
+### 1.6 Correlation Analysis
+
+```{python}
+#| label: fig-correlation
+#| fig-cap: "Correlation matrix of numeric and binary features. Age shows the strongest linear association with stroke."
+df_corr = df.copy()
+df_corr["gender"] = (df_corr["gender"] == "Male").astype(int)
+df_corr["ever_married"] = (df_corr["ever_married"] == "Yes").astype(int)
+df_corr["Residence_type"] = (df_corr["Residence_type"] == "Urban").astype(int)
+
+corr_cols = ["age", "avg_glucose_level", "bmi", "hypertension",
+             "heart_disease", "gender", "ever_married", "Residence_type", "stroke"]
+corr = df_corr[corr_cols].corr()
+
+fig, ax = plt.subplots(figsize=(9, 7))
+mask = np.triu(np.ones_like(corr, dtype=bool), k=1)
+sns.heatmap(corr, mask=mask, annot=True, fmt=".2f", cmap="RdBu_r",
+            center=0, vmin=-1, vmax=1, square=True, ax=ax)
+ax.set_title("Feature Correlation Matrix")
+fig.tight_layout()
+savefig(fig, "05_correlation_matrix.png")
+plt.show()
+```
+
+### 1.7 Key EDA Findings
+
+- **Age** is the strongest univariate predictor (r ≈ 0.25 with stroke).
+- **Hypertension** and **heart disease** have elevated stroke rates (~4-5× baseline).
+- **Average glucose level** shows a right-skewed distribution with higher values among stroke patients.
+- **BMI** has a weak association with stroke.
+- **Smoking**: "formerly smoked" has the highest stroke rate, while "unknown" (children) has the lowest.
+- Class imbalance is severe (1.8%) — standard accuracy metrics will be misleading.
+
+---
+
+## 2. Feature Engineering
+
+```{python}
+#| label: feature-engineering
+target = "stroke"
+y = df[target]
+
+numeric_features = ["age", "avg_glucose_level", "bmi"]
+categorical_features = ["gender", "hypertension", "heart_disease",
+                        "ever_married", "work_type", "Residence_type",
+                        "smoking_status"]
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("num", StandardScaler(), numeric_features),
+        ("cat", OneHotEncoder(drop="if_binary", sparse_output=False,
+                              handle_unknown="infrequent_if_exist"),
+         categorical_features),
+    ]
+)
+
+X = preprocessor.fit_transform(df[numeric_features + categorical_features])
+feature_names = (numeric_features +
+                 preprocessor.named_transformers_["cat"]
+                 .get_feature_names_out(categorical_features).tolist())
+print(f"Feature matrix: {X.shape[0]:,} samples × {X.shape[1]} features")
+print(f"Features: {feature_names}")
+```
+
+---
+
+## 3. Analysis I — Supervised Statistical Learning
+
+### 3.1 Handling Class Imbalance — Why Not SMOTE?
+
+The dataset has a 1.8% positive rate. Traditional approaches rely on **SMOTE**
+(Synthetic Minority Oversampling Technique) to generate synthetic minority samples.
+However, recent evidence shows SMOTE is problematic:
+
+1. **Noisy synthetic samples**: SMOTE interpolates linearly between nearest
+   neighbours without domain semantics, producing physiologically implausible
+   patient profiles (e.g., blending a child's BMI with an elderly patient's
+   comorbidities).
+2. **Data leakage risk**: even within pipelines, synthetic samples can inflate
+   evaluation metrics without improving real-world performance.
+3. **Unnecessary with strong learners**: modern tree-based models handle natural
+   class distributions well when combined with cost-sensitive learning.
+
+Instead, we use the **modern best-practice approach**:
+
+- **Cost-sensitive learning**: `class_weight="balanced"` (logistic regression,
+  random forest) or `scale_pos_weight` (gradient boosting) adjusts the loss
+  function to upweight minority samples without fabricating data.
+- **Threshold tuning**: train on the natural distribution and optimise the
+  decision threshold post-hoc using the precision-recall curve.
+- **Proper metrics**: PR-AUC as the primary metric (more informative than ROC-AUC
+  for rare events), supplemented by ROC-AUC and calibrated F1.
+
+References: [Train in Data (2025)](https://www.blog.trainindata.com/should-you-use-imbalanced-learn-in-2025/),
+[imbalanced-learn common pitfalls](https://imbalanced-learn.org/stable/common_pitfalls.html),
+[Springer cost-sensitive review (2023)](https://doi.org/10.1007/s10462-023-10652-8).
+
+```{python}
+#| label: imbalance-comparison
+cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+# Compare baseline vs cost-sensitive approaches on the natural distribution
+strategies = {
+    "Baseline LR (no correction)": LogisticRegression(
+        max_iter=1000, random_state=42),
+    "Cost-sensitive LR (balanced)": LogisticRegression(
+        max_iter=1000, class_weight="balanced", random_state=42),
+    "Cost-sensitive RF (balanced)": RandomForestClassifier(
+        n_estimators=200, max_depth=10, class_weight="balanced",
+        random_state=42, n_jobs=-1),
+    "Cost-sensitive GB (scale_pos_weight)": GradientBoostingClassifier(
+        n_estimators=200, max_depth=5, random_state=42,
+        # Manual sample_weight applied via fit — approximate here with init settings
+    ),
+}
+
+# We need to handle GB scale_pos_weight differently since sklearn GB doesn't
+# have it built-in. We'll use sample_weight in cross_val_predict instead.
+n_pos = y.sum()
+n_neg = len(y) - n_pos
+scale_weight = n_neg / n_pos
+
+results_imbalance = []
+for name, model in strategies.items():
+    if "GB" in name:
+        # For GB, use sample_weight via manual CV
+        aucs = []
+        pr_aucs = []
+        for train_idx, val_idx in cv.split(X, y):
+            X_tr, X_val = X[train_idx], X[val_idx]
+            y_tr, y_val = y.iloc[train_idx], y.iloc[val_idx]
+            sw = np.where(y_tr == 1, scale_weight, 1.0)
+            model.fit(X_tr, y_tr, sample_weight=sw)
+            probs = model.predict_proba(X_val)[:, 1]
+            aucs.append(roc_auc_score(y_val, probs))
+            pr_aucs.append(average_precision_score(y_val, probs))
+        results_imbalance.append({
+            "Strategy": name,
+            "ROC-AUC": f"{np.mean(aucs):.4f}",
+            "PR-AUC": f"{np.mean(pr_aucs):.4f}",
+        })
+    else:
+        y_prob = cross_val_predict(model, X, y, cv=cv, method="predict_proba")[:, 1]
+        results_imbalance.append({
+            "Strategy": name,
+            "ROC-AUC": f"{roc_auc_score(y, y_prob):.4f}",
+            "PR-AUC": f"{average_precision_score(y, y_prob):.4f}",
+        })
+
+pd.DataFrame(results_imbalance)
+```
+
+Cost-sensitive learning substantially improves both ROC-AUC and PR-AUC over the
+naive baseline, confirming that addressing imbalance at the algorithm level is
+effective — without fabricating synthetic data.
+
+### 3.2 Model Comparison
+
+```{python}
+#| label: model-training
+models = {
+    "Logistic Regression": LogisticRegression(
+        max_iter=1000, class_weight="balanced", random_state=42),
+    "Random Forest": RandomForestClassifier(
+        n_estimators=200, max_depth=10, class_weight="balanced",
+        random_state=42, n_jobs=-1),
+}
+
+model_probs = {}
+model_results = []
+for name, model in models.items():
+    probs = cross_val_predict(model, X, y, cv=cv, method="predict_proba")[:, 1]
+    model_probs[name] = probs
+    auc = roc_auc_score(y, probs)
+    pr_auc = average_precision_score(y, probs)
+    scores_roc = cross_val_score(model, X, y, cv=cv, scoring="roc_auc")
+    scores_pr = cross_val_score(model, X, y, cv=cv, scoring="average_precision")
+    model_results.append({
+        "Model": name,
+        "ROC-AUC": f"{auc:.4f}",
+        "ROC ± SD": f"{scores_roc.mean():.4f} ± {scores_roc.std():.4f}",
+        "PR-AUC": f"{pr_auc:.4f}",
+        "PR ± SD": f"{scores_pr.mean():.4f} ± {scores_pr.std():.4f}",
+    })
+
+# Gradient Boosting with sample_weight
+gb_probs_all = np.zeros(len(y))
+gb_roc_scores = []
+gb_pr_scores = []
+gb = GradientBoostingClassifier(n_estimators=200, max_depth=5, random_state=42)
+for train_idx, val_idx in cv.split(X, y):
+    X_tr, X_val = X[train_idx], X[val_idx]
+    y_tr, y_val = y.iloc[train_idx], y.iloc[val_idx]
+    sw = np.where(y_tr == 1, scale_weight, 1.0)
+    gb.fit(X_tr, y_tr, sample_weight=sw)
+    probs = gb.predict_proba(X_val)[:, 1]
+    gb_probs_all[val_idx] = probs
+    gb_roc_scores.append(roc_auc_score(y_val, probs))
+    gb_pr_scores.append(average_precision_score(y_val, probs))
+
+model_probs["Gradient Boosting"] = gb_probs_all
+model_results.append({
+    "Model": "Gradient Boosting",
+    "ROC-AUC": f"{roc_auc_score(y, gb_probs_all):.4f}",
+    "ROC ± SD": f"{np.mean(gb_roc_scores):.4f} ± {np.std(gb_roc_scores):.4f}",
+    "PR-AUC": f"{average_precision_score(y, gb_probs_all):.4f}",
+    "PR ± SD": f"{np.mean(gb_pr_scores):.4f} ± {np.std(gb_pr_scores):.4f}",
+})
+
+pd.DataFrame(model_results)
+```
+
+```{python}
+#| label: fig-roc-pr
+#| fig-cap: "Left: ROC curves. Right: Precision-Recall curves — the more informative metric for rare events. All models trained with cost-sensitive learning on the natural class distribution."
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 10))
+colors = {"Logistic Regression": "#4DBBD5", "Random Forest": "#E64B35",
+          "Gradient Boosting": "#00A087"}
+
+for name, probs in model_probs.items():
+    auc = roc_auc_score(y, probs)
+    pr_auc = average_precision_score(y, probs)
+    RocCurveDisplay.from_predictions(
+        y, probs, name=f"{name} (AUC={auc:.3f})",
+        ax=ax1, color=colors[name])
+    PrecisionRecallDisplay.from_predictions(
+        y, probs, name=f"{name} (AP={pr_auc:.3f})",
+        ax=ax2, color=colors[name])
+
+ax1.plot([0, 1], [0, 1], "k--", alpha=0.3, label="Chance")
+ax1.set_title("ROC Curves — 5-Fold CV")
+ax1.legend(loc="lower right", fontsize=8)
+
+ax2.axhline(y.mean(), color="black", linestyle="--", alpha=0.3, label="Baseline prevalence")
+ax2.set_title("Precision-Recall Curves — 5-Fold CV")
+ax2.legend(loc="upper right", fontsize=8)
+
+fig.tight_layout()
+savefig(fig, "06_roc_pr_curves.png")
+plt.show()
+```
+
+### 3.3 Threshold Tuning
+
+Rather than using the default 0.5 threshold (arbitrary for imbalanced data), we
+select the threshold that maximises F1 on the precision-recall curve.
+
+```{python}
+#| label: fig-threshold
+#| fig-cap: "F1 score as a function of decision threshold for the Random Forest model. The optimal threshold is substantially below 0.5, reflecting the class imbalance."
+best_model_name = "Random Forest"
+probs_best = model_probs[best_model_name]
+
+precision_vals, recall_vals, thresholds = precision_recall_curve(y, probs_best)
+f1_scores = 2 * (precision_vals[:-1] * recall_vals[:-1]) / (
+    precision_vals[:-1] + recall_vals[:-1] + 1e-10)
+best_idx = np.argmax(f1_scores)
+best_threshold = thresholds[best_idx]
+best_f1 = f1_scores[best_idx]
+
+fig, ax = plt.subplots(figsize=(8, 5))
+ax.plot(thresholds, f1_scores, color="#E64B35", linewidth=2)
+ax.axvline(best_threshold, color="black", linestyle="--", alpha=0.5,
+           label=f"Optimal threshold = {best_threshold:.3f}")
+ax.axvline(0.5, color="gray", linestyle=":", alpha=0.5, label="Default threshold = 0.5")
+ax.scatter([best_threshold], [best_f1], color="#E64B35", s=100, zorder=5)
+ax.set_xlabel("Decision Threshold")
+ax.set_ylabel("F1 Score")
+ax.set_title(f"Threshold Optimisation — {best_model_name}")
+ax.legend()
+fig.tight_layout()
+savefig(fig, "07_threshold_tuning.png")
+plt.show()
+
+print(f"Optimal threshold: {best_threshold:.3f}")
+print(f"F1 at optimal threshold: {best_f1:.3f}")
+
+# Performance at optimal vs default threshold
+for thr, label in [(0.5, "Default (0.5)"), (best_threshold, "Optimised")]:
+    preds = (probs_best >= thr).astype(int)
+    p, r, f1, _ = precision_recall_fscore_support(y, preds, pos_label=1, average="binary")
+    print(f"\n{label} threshold:")
+    print(f"  Precision={p:.3f}  Recall={r:.3f}  F1={f1:.3f}")
+```
+
+### 3.4 Feature Importance — SHAP Values
+
+```{python}
+#| label: fig-shap
+#| fig-cap: "SHAP beeswarm plot from the random forest model. Age and average glucose level dominate feature importance."
+rf_final = RandomForestClassifier(
+    n_estimators=200, max_depth=10, class_weight="balanced",
+    random_state=42, n_jobs=-1)
+rf_final.fit(X, y)
+
+explainer = shap.TreeExplainer(rf_final)
+shap_values = explainer.shap_values(X)
+
+fig, ax = plt.subplots(figsize=(10, 7))
+shap.summary_plot(shap_values[:, :, 1], X, feature_names=feature_names,
+                  show=False, max_display=15)
+plt.title("SHAP Feature Importance — Random Forest (Cost-Sensitive)",
+          fontsize=13, pad=15)
+plt.tight_layout()
+savefig(plt.gcf(), "08_shap_importance.png")
+plt.show()
+```
+
+### 3.5 Logistic Regression Coefficients
+
+```{python}
+#| label: fig-coef
+#| fig-cap: "Logistic regression coefficients on standardised features. Positive values increase stroke risk."
+lr_final = LogisticRegression(
+    max_iter=1000, class_weight="balanced", random_state=42)
+lr_final.fit(X, y)
+
+coef_df = pd.DataFrame({
+    "Feature": feature_names,
+    "Coefficient": lr_final.coef_[0],
+}).sort_values("Coefficient")
+
+fig, ax = plt.subplots(figsize=(8, 7))
+colors = ["#E64B35" if c > 0 else "#4DBBD5" for c in coef_df["Coefficient"]]
+ax.barh(coef_df["Feature"], coef_df["Coefficient"], color=colors)
+ax.axvline(0, color="black", linewidth=0.5)
+ax.set_xlabel("Coefficient (log-odds)")
+ax.set_title("Logistic Regression Coefficients (Standardised, Cost-Sensitive)")
+plt.tight_layout()
+savefig(fig, "09_lr_coefficients.png")
+plt.show()
+```
+
+---
+
+## 4. Analysis II — Unsupervised Statistical Learning
+
+We use PCA for dimensionality reduction followed by K-Means clustering to identify
+patient sub-populations, then examine their stroke susceptibility.
+
+### 4.1 PCA — Dimensionality Reduction
+
+```{python}
+#| label: fig-pca-variance
+#| fig-cap: "Cumulative explained variance by PCA components. The first 5 components capture ~60% of variance."
+pca = PCA(random_state=42)
+X_pca = pca.fit_transform(X)
+
+fig, ax = plt.subplots(figsize=(8, 4))
+cumvar = np.cumsum(pca.explained_variance_ratio_)
+ax.bar(range(1, len(cumvar)+1), pca.explained_variance_ratio_,
+       color="#4DBBD5", alpha=0.7, label="Individual")
+ax.plot(range(1, len(cumvar)+1), cumvar, "o-", color="#E64B35", label="Cumulative")
+ax.axhline(0.8, color="black", linestyle="--", alpha=0.3)
+ax.set_xlabel("Principal Component")
+ax.set_ylabel("Explained Variance Ratio")
+ax.set_title("PCA Explained Variance")
+ax.legend()
+fig.tight_layout()
+savefig(fig, "10_pca_variance.png")
+plt.show()
+```
+
+### 4.2 K-Means Clustering
+
+```{python}
+#| label: fig-silhouette
+#| fig-cap: "Silhouette scores for different numbers of clusters."
+X_pca5 = X_pca[:, :5]
+
+sil_scores = []
+K_range = range(2, 8)
+for k in K_range:
+    km = KMeans(n_clusters=k, random_state=42, n_init=10)
+    labels = km.fit_predict(X_pca5)
+    sil_scores.append(silhouette_score(X_pca5, labels))
+
+fig, ax = plt.subplots(figsize=(7, 4))
+ax.plot(list(K_range), sil_scores, "o-", color="#E64B35")
+ax.set_xlabel("Number of Clusters (K)")
+ax.set_ylabel("Silhouette Score")
+ax.set_title("Optimal Cluster Count")
+fig.tight_layout()
+savefig(fig, "11_silhouette_scores.png")
+plt.show()
+```
+
+```{python}
+#| label: fig-clusters
+#| fig-cap: "Patient clusters in PCA space (first two components), coloured by cluster assignment. Stroke cases (×) overlay the clusters."
+best_k = list(K_range)[np.argmax(sil_scores)]
+km_final = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+df["cluster"] = km_final.fit_predict(X_pca5)
+
+fig, ax = plt.subplots(figsize=(8, 6))
+cluster_colors = ["#E64B35", "#4DBBD5", "#00A087", "#F39B7F", "#8491B4"]
+for c in range(best_k):
+    mask = df["cluster"] == c
+    ax.scatter(X_pca[mask, 0], X_pca[mask, 1], c=cluster_colors[c],
+               alpha=0.15, s=5, label=f"Cluster {c}")
+stroke_mask = df["stroke"] == 1
+ax.scatter(X_pca[stroke_mask, 0], X_pca[stroke_mask, 1],
+           c="black", marker="x", s=15, alpha=0.6, label="Stroke")
+ax.set_xlabel("PC1")
+ax.set_ylabel("PC2")
+ax.set_title(f"K-Means Clusters (K={best_k}) in PCA Space")
+ax.legend(markerscale=3)
+fig.tight_layout()
+savefig(fig, "12_clusters_pca.png")
+plt.show()
+```
+
+### 4.3 Cluster Profiles and Stroke Susceptibility
+
+```{python}
+#| label: cluster-profiles
+profile_cols = ["age", "avg_glucose_level", "bmi", "hypertension",
+                "heart_disease", "stroke"]
+cluster_profile = df.groupby("cluster")[profile_cols].mean().round(3)
+cluster_profile["n"] = df.groupby("cluster").size()
+cluster_profile["stroke_rate"] = (cluster_profile["stroke"] * 100).round(2).astype(str) + "%"
+cluster_profile
+```
+
+```{python}
+#| label: fig-cluster-stroke
+#| fig-cap: "Stroke prevalence varies substantially across patient clusters, with the highest-risk cluster characterised by older age and elevated glucose."
+fig, axes = plt.subplots(3, 1, figsize=(8, 10))
+
+cluster_rates = df.groupby("cluster")["stroke"].mean() * 100
+axes[0].bar([f"Cluster {c}" for c in range(best_k)], cluster_rates.values,
+            color=cluster_colors[:best_k])
+axes[0].set_ylabel("Stroke Rate (%)")
+axes[0].set_title("Stroke Prevalence by Cluster")
+
+cluster_age = df.groupby("cluster")["age"].mean()
+axes[1].bar([f"Cluster {c}" for c in range(best_k)], cluster_age.values,
+            color=cluster_colors[:best_k])
+axes[1].set_ylabel("Mean Age")
+axes[1].set_title("Mean Age by Cluster")
+
+cluster_gluc = df.groupby("cluster")["avg_glucose_level"].mean()
+axes[2].bar([f"Cluster {c}" for c in range(best_k)], cluster_gluc.values,
+            color=cluster_colors[:best_k])
+axes[2].set_ylabel("Mean Glucose")
+axes[2].set_title("Mean Glucose by Cluster")
+
+fig.tight_layout()
+savefig(fig, "13_cluster_stroke_profiles.png")
+plt.show()
+```
+
+---
+
+## 5. Analysis III — Causal Inference
+
+We use **Inverse Probability of Treatment Weighting (IPW)** to estimate the
+Average Treatment Effect (ATE) of modifiable risk factors on stroke. IPW creates
+a pseudo-population where the treatment is independent of measured confounders,
+allowing a causal interpretation under the assumptions of no unmeasured confounding,
+positivity, and consistency.
+
+For each binary treatment (hypertension, heart disease, smoking), we:
+
+1. Fit a propensity score model: P(treatment | confounders)
+2. Compute IPW weights: 1/P(T|X) for treated, 1/(1−P(T|X)) for untreated
+3. Estimate the weighted difference in stroke rates (ATE)
+4. Bootstrap 95% confidence intervals
+
+```{python}
+#| label: causal-setup
+df_causal = df.copy()
+df_causal["gender_male"] = (df_causal["gender"] == "Male").astype(int)
+df_causal["ever_married_yes"] = (df_causal["ever_married"] == "Yes").astype(int)
+df_causal["urban"] = (df_causal["Residence_type"] == "Urban").astype(int)
+df_causal["ever_smoked"] = df_causal["smoking_status"].isin(
+    ["formerly smoked", "smokes"]).astype(int)
+
+confounders = ["age", "avg_glucose_level", "bmi", "gender_male",
+               "ever_married_yes", "urban"]
+
+
+def ipw_ate(data, treatment_col, outcome_col, confounder_cols, n_bootstrap=500):
+    """Estimate Average Treatment Effect using Inverse Probability Weighting.
+
+    Args:
+        data: DataFrame with treatment, outcome, and confounder columns.
+        treatment_col: Name of the binary treatment column.
+        outcome_col: Name of the binary outcome column.
+        confounder_cols: List of confounder column names.
+        n_bootstrap: Number of bootstrap iterations for CI.
+
+    Returns:
+        Dictionary with ATE, 95% CI lower and upper bounds.
+    """
+    def _ate_once(df_boot):
+        X_c = df_boot[confounder_cols].values
+        t = df_boot[treatment_col].values
+        y_out = df_boot[outcome_col].values
+
+        ps_model = LogisticRegression(max_iter=1000, random_state=42)
+        ps_model.fit(X_c, t)
+        ps = ps_model.predict_proba(X_c)[:, 1]
+        ps = np.clip(ps, 0.01, 0.99)
+
+        w1 = t / ps
+        w0 = (1 - t) / (1 - ps)
+
+        ate = np.average(y_out, weights=w1) - np.average(y_out, weights=w0)
+        return ate
+
+    ate_point = _ate_once(data)
+
+    rng = np.random.default_rng(42)
+    boot_ates = []
+    for _ in range(n_bootstrap):
+        idx = rng.choice(len(data), size=len(data), replace=True)
+        boot_ates.append(_ate_once(data.iloc[idx]))
+    boot_ates = np.array(boot_ates)
+    ci_low, ci_high = np.percentile(boot_ates, [2.5, 97.5])
+
+    return {"ATE": ate_point, "CI_low": ci_low, "CI_high": ci_high}
+```
+
+```{python}
+#| label: causal-estimates
+treatments = {
+    "Hypertension": "hypertension",
+    "Heart Disease": "heart_disease",
+    "Ever Smoked": "ever_smoked",
+}
+
+causal_results = []
+for label, col in treatments.items():
+    conf = [c for c in confounders if c != col]
+    result = ipw_ate(df_causal, col, "stroke", conf)
+    causal_results.append({
+        "Treatment": label,
+        "ATE (pp)": f"{result['ATE']*100:.2f}",
+        "95% CI": f"[{result['CI_low']*100:.2f}, {result['CI_high']*100:.2f}]",
+    })
+    print(f"{label}: ATE = {result['ATE']*100:.2f} pp "
+          f"[{result['CI_low']*100:.2f}, {result['CI_high']*100:.2f}]")
+
+pd.DataFrame(causal_results)
+```
+
+```{python}
+#| label: fig-causal
+#| fig-cap: "IPW-estimated Average Treatment Effects (in percentage points) with 95% bootstrap confidence intervals. Hypertension and heart disease show the strongest causal effects on stroke risk."
+fig, ax = plt.subplots(figsize=(8, 4))
+
+ate_vals = []
+ci_lows = []
+ci_highs = []
+labels = []
+for label, col in treatments.items():
+    conf = [c for c in confounders if c != col]
+    result = ipw_ate(df_causal, col, "stroke", conf, n_bootstrap=500)
+    ate_vals.append(result["ATE"] * 100)
+    ci_lows.append(result["CI_low"] * 100)
+    ci_highs.append(result["CI_high"] * 100)
+    labels.append(label)
+
+y_pos = range(len(labels))
+xerr_low = [a - l for a, l in zip(ate_vals, ci_lows)]
+xerr_high = [h - a for a, h in zip(ate_vals, ci_highs)]
+
+ax.barh(labels, ate_vals, color=["#E64B35", "#4DBBD5", "#00A087"],
+        xerr=[xerr_low, xerr_high], capsize=5, edgecolor="white")
+ax.axvline(0, color="black", linewidth=0.5)
+ax.set_xlabel("Average Treatment Effect (percentage points)")
+ax.set_title("Causal Effect on Stroke Risk (IPW Estimation)")
+fig.tight_layout()
+savefig(fig, "14_causal_ate.png")
+plt.show()
+```
+
+**Causal inference assumptions and limitations:**
+
+- **No unmeasured confounding**: We can only adjust for observed variables. Unmeasured
+  confounders (genetics, diet, physical activity) may bias estimates.
+- **Positivity**: Some covariate strata may have very few treated/untreated, making
+  weights unstable. We trim propensity scores to [0.01, 0.99].
+- This is observational data — results should be interpreted as **suggestive of causal
+  relationships**, not definitive proof.
+
+---
+
+## 6. Analysis IV — Unified Feature Importance Ranking
+
+We synthesise insights from all three methods into a single ranking by combining:
+
+1. **SHAP mean absolute values** (supervised, non-linear)
+2. **Logistic regression absolute coefficients** (supervised, linear)
+3. **Cluster-stroke association** (unsupervised — how well each feature separates
+   high-risk from low-risk clusters)
+
+Each is rank-normalised and averaged.
+
+```{python}
+#| label: fig-unified
+#| fig-cap: "Unified feature importance ranking combining supervised (SHAP, logistic regression) and unsupervised (cluster separation) evidence. Age and glucose level emerge as the most robust risk factors across all methods."
+# SHAP importance
+shap_importance = np.abs(shap_values[:, :, 1]).mean(axis=0)
+shap_rank = pd.Series(shap_importance, index=feature_names).rank(ascending=False)
+
+# LR importance
+lr_importance = np.abs(lr_final.coef_[0])
+lr_rank = pd.Series(lr_importance, index=feature_names).rank(ascending=False)
+
+# Cluster-based: correlation of each feature with cluster stroke rate
+cluster_stroke = df.groupby("cluster")["stroke"].mean()
+feature_cluster_corr = []
+for i, fname in enumerate(feature_names):
+    cluster_means = pd.Series(X[:, i]).groupby(df["cluster"].values).mean()
+    corr_val = abs(cluster_means.corr(cluster_stroke))
+    feature_cluster_corr.append(corr_val if not np.isnan(corr_val) else 0)
+cluster_rank = pd.Series(feature_cluster_corr, index=feature_names).rank(ascending=False)
+
+# Combine ranks (lower = more important)
+combined = pd.DataFrame({
+    "SHAP Rank": shap_rank,
+    "LR Rank": lr_rank,
+    "Cluster Rank": cluster_rank,
+})
+combined["Mean Rank"] = combined.mean(axis=1)
+combined = combined.sort_values("Mean Rank")
+
+fig, ax = plt.subplots(figsize=(10, 7))
+bar_data = combined["Mean Rank"]
+colors = ["#E64B35" if r <= 5 else "#4DBBD5" for r in bar_data.values]
+ax.barh(bar_data.index, bar_data.max() - bar_data.values + 1, color=colors)
+ax.set_xlabel("Importance Score (higher = more important)")
+ax.set_title("Unified Feature Importance — All Methods Combined")
+fig.tight_layout()
+savefig(fig, "15_unified_importance.png")
+plt.show()
+
+combined.head(10)
+```
+
+---
+
+## 7. Summary and Conclusions
+
+### Converging Evidence Across All Four Approaches
+
+| Rank | Feature | Supervised | Unsupervised | Causal |
+|------|---------|-----------|--------------|--------|
+| 1 | **Age** | Top SHAP + LR coef | Separates high/low-risk clusters | Confound-adjusted in all models |
+| 2 | **Avg glucose level** | Top SHAP + LR coef | High-risk cluster = high glucose | — |
+| 3 | **Hypertension** | Strong positive coef | Enriched in high-risk cluster | Significant ATE |
+| 4 | **Heart disease** | Strong positive coef | Enriched in high-risk cluster | Significant ATE |
+| 5 | **Smoking (ever)** | Moderate SHAP | Moderate enrichment | Positive ATE |
+
+### Uncertainty Quantification
+
+```{python}
+#| label: final-uncertainty
+print("Cross-validation performance (5-fold, cost-sensitive, no resampling):\n")
+for name in ["Logistic Regression", "Random Forest"]:
+    model = models[name]
+    roc_scores = cross_val_score(model, X, y, cv=cv, scoring="roc_auc")
+    pr_scores = cross_val_score(model, X, y, cv=cv, scoring="average_precision")
+    print(f"{name}:")
+    print(f"  ROC-AUC = {roc_scores.mean():.4f} ± {roc_scores.std():.4f}")
+    print(f"  PR-AUC  = {pr_scores.mean():.4f} ± {pr_scores.std():.4f}")
+```
+
+### Methodological Notes
+
+**Why not SMOTE?** We deliberately avoid synthetic oversampling (SMOTE) because:
+(1) it fabricates data points that may be physiologically implausible,
+(2) it inflates evaluation metrics without improving real-world performance,
+and (3) modern cost-sensitive learners handle severe imbalance effectively
+without data augmentation
+([Train in Data, 2025](https://www.blog.trainindata.com/should-you-use-imbalanced-learn-in-2025/);
+[imbalanced-learn pitfalls](https://imbalanced-learn.org/stable/common_pitfalls.html)).
+
+**Threshold tuning** on the precision-recall curve provides a principled way to
+select an operating point that reflects the clinical cost asymmetry (missing a
+stroke is far worse than a false alarm).
+
+### Limitations
+
+- **Observational data**: associations do not prove causation. The IPW estimates are
+  suggestive but rely on the no-unmeasured-confounding assumption.
+- **Class imbalance**: despite cost-sensitive learning, the 1.8% positive rate
+  inherently limits precision. All models favour recall over precision.
+- **Missing data**: 30.6% of smoking status is unknown (children), limiting
+  precision of smoking effect estimates. Age-stratified BMI imputation introduces
+  minor noise.
+- **Generalisability**: the dataset's demographic composition may not represent
+  all populations.

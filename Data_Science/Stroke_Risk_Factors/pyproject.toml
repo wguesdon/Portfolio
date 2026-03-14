@@ -1,0 +1,23 @@
+[project]
+name = "stroke-risk-factors"
+version = "0.1.0"
+description = "Supervised learning analysis of stroke risk factors"
+requires-python = ">=3.13"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=2.1",
+    "scikit-learn>=1.5",
+    "shap>=0.46",
+    "matplotlib>=3.9",
+    "seaborn>=0.13",
+    "setuptools<81",
+    "pyyaml>=6.0.3",
+    "nbformat>=5.10.4",
+    "nbclient>=0.10.4",
+    "jupyter-core>=5.9.1",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.29",
+]
