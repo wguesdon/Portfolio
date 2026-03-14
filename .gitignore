@@ -1,3 +1,12 @@
-
-.DS_Store
-.Rhistory
+Ideas/
+**/data/
+**/Data/
+**/artifacts/
+**/Artifacts/
+**/models/
+**/Models/
+**/__pycache__/
+**/*.pyc
+**/ensemble/*.npy
+**/output/
+**/Output/
