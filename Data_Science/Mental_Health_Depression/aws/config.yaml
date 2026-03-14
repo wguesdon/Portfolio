@@ -1,0 +1,52 @@
+competition:
+  name: "playground-series-s4e11"
+  s3_bucket: "kaggle-ps4e11"
+  metric: "accuracy"
+  target_column: "Depression"
+  num_classes: 2
+  classes: [0, 1]  # binary: 0=no depression, 1=depression
+
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+  # No original dataset augmentation for this competition
+
+training:
+  n_folds: 10
+  random_state: 42
+  n_trials: 50  # Optuna tuning — 140K samples makes validation reliable
+
+# Updated after training based on OOF ensemble results
+ensemble:
+  lgb: 2
+  xgb: 1
+  cat: 1
+
+models:
+  enabled: ["lightgbm", "xgboost", "catboost", "autogluon"]
+  lightgbm:
+    instance_type: "ml.m5.4xlarge"
+    use_spot: true
+    max_runtime_hours: 4
+    max_wait_hours: 5
+  xgboost:
+    instance_type: "ml.g4dn.xlarge"
+    use_spot: true
+    max_runtime_hours: 4
+    max_wait_hours: 5
+  catboost:
+    instance_type: "ml.g5.xlarge"
+    use_spot: true
+    max_runtime_hours: 4
+    max_wait_hours: 5
+  autogluon:
+    instance_type: "ml.m5.4xlarge"  # 16 vCPU, 64GB RAM — no GPU needed
+    use_spot: true
+    max_runtime_hours: 6
+    max_wait_hours: 8
+    volume_size_gb: 80            # autogluon.tabular install is ~3GB + model artifacts
+    time_limit_seconds: 14400     # 4 hours for AutoGluon to train all models
+
+# Override shared ECR prefix so images don't overwrite Obesity project
+aws:
+  ecr_repository_prefix: "kaggle-ps4e11"
