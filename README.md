@@ -42,6 +42,10 @@ William Guesdon |
 ---
 ## Data Science
 
+### [Predict Irrigation Need](Data_Science/predict_irrigation_need)
+
+**Kaggle Playground Series S6E4** — 3 class classification of irrigation need from soil, weather, and field features under severe class imbalance. Stacked ensemble of 30 to 41 base models (XGBoost, LightGBM, CatBoost, ExtraTrees, RealMLP, KNN, LR, SVM, TabPFN, GNN) reaching balanced accuracy 0.98081 on the public leaderboard. Write up: [OOF ensemble method](https://willguesdon.com/posts/ps6e4-oof-ensemble-method).
+
 ### [Obesity Risk Prediction](Data_Science/Obesity_Risk_Prediction)
 
 **Top 1% on Kaggle** (30/3,587) — Multi-class classification predicting obesity risk from lifestyle and anthropometric features. Ensemble of LightGBM, XGBoost, and CatBoost trained on AWS SageMaker, achieving ~91.3% accuracy across 7 obesity categories.

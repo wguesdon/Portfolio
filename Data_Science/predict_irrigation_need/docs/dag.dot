@@ -1,0 +1,70 @@
+// PS6E4 Model and Ensembling DAG
+// Render with: dot -Tpng dag.dot -o dag.png
+// Or:          dot -Tsvg dag.dot -o dag.svg
+
+digraph PS6E4_DAG {
+    rankdir=TB;
+    bgcolor="white";
+    node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, margin="0.2,0.12"];
+    edge [fontname="Helvetica", fontsize=9, color="#666666"];
+    splines=ortho;
+
+    // Data
+    Data [label="Raw Data\nTrain 630K rows, Test 270K rows\n20 features, 3 classes\nLow 58.7%, Medium 37.9%, High 3.3%",
+          fillcolor="#e8e8e8", color="#333333"];
+
+    // Feature engineering pipelines
+    FE1 [label="OTE Pipeline\n4x shuffle concat\nLeave one out target encoding\nDigit extraction",
+         fillcolor="#cfe2ff", color="#0d6efd"];
+    FE2 [label="v3 Pipeline\nMagic ratios + domain features\nStandard target encoding\n2 way interactions",
+         fillcolor="#cfe2ff", color="#0d6efd"];
+
+    // OTE strong models
+    OTE_TOP [label="Top OTE Boosters\nLGB OTE              0.97942\nXGB OTE              0.97938\nXGB OTE shallow GPU  0.97927\nCAT OTE              0.97919\nXGB OTE magic        0.97910\nXGB OTE seeds 43, 44 ~0.9793\nLGB OTE shallow / deep",
+             fillcolor="#fff3cd", color="#664d03"];
+
+    // OTE diversity models
+    OTE_DIV [label="OTE Diversity Models\nExtraTrees       0.96156\ncuML SVM RBF     0.96154\ncuML RF          0.96005\nLR ElasticNet    0.95568\nLR L1            0.95554\nLR L2            0.95522\ncuML GaussianNB  0.90860\nKNN k=15         0.71937",
+             fillcolor="#d1e7dd", color="#0a3622"];
+
+    // v3 gradient boosters
+    V3_GBDT [label="v3 Gradient Boosters\n7 CatBoost variants  0.97786 to 0.97834\n4 LightGBM variants  0.97131 to 0.97701\n6 XGBoost variants   0.97185 to 0.97561",
+             fillcolor="#fff3cd", color="#664d03"];
+
+    // v3 neural nets
+    V3_NN [label="v3 Neural Networks\nRealMLP mahog   0.97802\nRealMLP v3fix   0.97108\nTabM v3fix      0.97053",
+           fillcolor="#d1e7dd", color="#0a3622"];
+
+    // Stacker
+    STACK [label="LightGBM Stacker\n41 base model OOF probabilities\n5 fold StratifiedKFold seed 42\nCV 0.98045",
+           fillcolor="#ffe5d0", color="#c2410c", penwidth=2];
+
+    // Log bias
+    LOGBIAS [label="Log Bias Correction\nPer class additive shift on log proba\nTuned on OOF for balanced accuracy",
+             fillcolor="#ffe5d0", color="#c2410c", penwidth=2];
+
+    // Final submission
+    SUB [label="Final Submission v15\nPublic LB  0.98081\nPrivate LB 0.98082\n12 of 457",
+         fillcolor="#90ee90", color="#0a3622", penwidth=2];
+
+    // Edges
+    Data -> FE1;
+    Data -> FE2;
+
+    FE1 -> OTE_TOP;
+    FE1 -> OTE_DIV;
+    FE2 -> V3_GBDT;
+    FE2 -> V3_NN;
+
+    OTE_TOP -> STACK;
+    OTE_DIV -> STACK;
+    V3_GBDT -> STACK;
+    V3_NN -> STACK;
+
+    STACK -> LOGBIAS;
+    LOGBIAS -> SUB;
+
+    // Group ranks
+    { rank=same; FE1; FE2; }
+    { rank=same; OTE_TOP; OTE_DIV; V3_GBDT; V3_NN; }
+}
