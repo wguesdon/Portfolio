@@ -17,12 +17,6 @@ A full write up of the OOF ensembling method used in this solution is published 
 
 [OOF ensemble method for PS6E4](https://willguesdon.com/posts/ps6e4-oof-ensemble-method)
 
-## Source codebase
-
-The working codebase, experiment tracking, and Kaggle kernel artefacts live in the original Kaggle workspace:
-
-[Kaggle/Playground_Series/PS6E4 (working copy)](https://github.com/wguesdon/Kaggle/tree/main/Playground_Series/PS6E4)
-
 ## Approach summary
 
 1. Recovered the deterministic generator rule (the "magic formula") for the original 10K dataset and used distance to its decision boundaries as the dominant feature.
