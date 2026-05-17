@@ -37,7 +37,6 @@ predict_irrigation_need/
 ├── FINAL_SUBMISSION_STRATEGY.md
 ├── docs/         # workflow notes, DAG, SageMaker and Kaggle kernel guides
 ├── notebooks/    # showcase notebooks, 22 to 41 model ensembles, GNN training
-├── production/   # production showcase PRD
 ├── scripts/      # EDA, feature engineering, per model trainers, ensemble launchers
 └── write_up/     # public and private solution write ups
 ```
