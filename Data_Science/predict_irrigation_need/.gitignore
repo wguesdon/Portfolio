@@ -1,0 +1,15 @@
+# Reproduction artefacts that should not be committed.
+data/
+output/
+predictions/
+submissions/
+models/
+catboost_info/
+experiments.db
+*.pkl
+*.parquet
+*.zip
+.venv/
+.ipynb_checkpoints/
+__pycache__/
+*.pyc

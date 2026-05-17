@@ -1,9 +1,21 @@
 [project]
-name = "ps6e4"
+name = "predict-irrigation-need"
 version = "0.1.0"
-description = "Add your description here"
+description = "Kaggle Playground Series S6E4 solution: 3-class irrigation need prediction with a GBDT ensemble."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11,<3.13"
 dependencies = [
-    "nbformat>=5.10.4",
+    "catboost>=1.2.5",
+    "feature-engine>=1.8.0",
+    "ipykernel>=6.29.5",
+    "jupyter>=1.1.1",
+    "kaggle>=1.6.17",
+    "lightgbm>=4.5.0",
+    "matplotlib>=3.9.2",
+    "numpy>=1.26.4,<2.0",
+    "pandas>=2.2.3",
+    "scikit-learn>=1.5.2",
+    "scipy>=1.14.1",
+    "seaborn>=0.13.2",
+    "xgboost>=2.1.1",
 ]
